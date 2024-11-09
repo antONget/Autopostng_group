@@ -189,11 +189,15 @@ async def process_get_partner(message: Message, state: FSMContext, bot: Bot) -> 
                 await rq.set_role_user(id_user=user.id, role=rq.UserRole.partner)
                 await message.answer(text=f'Партнер @{user.username} успешно добавлен',
                                      reply_markup=None)
+                await bot.send_message(chat_id=user.tg_id,
+                                       text='Администратор проекта добавил вас партнером. Перезапустите бота /start')
                 await state.set_state(state=None)
             elif change_partner == 'del':
                 await rq.set_role_user(id_user=user.id, role=rq.UserRole.user)
                 await message.answer(text=f'Партнер @{user.username} успешно удален',
                                      reply_markup=None)
+                await bot.send_message(chat_id=user.tg_id,
+                                       text='Администратор проекта удалил вас из партнеров')
                 await state.set_state(state=None)
         else:
             await message.answer(text='Пользователь не найден в БД проверьте введенные данные')
