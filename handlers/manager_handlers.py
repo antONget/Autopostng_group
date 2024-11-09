@@ -117,8 +117,11 @@ async def process_select_group(callback: CallbackQuery, state: FSMContext, bot: 
     await callback.message.answer(text=f'Запрос на добавление вас в группу в качестве администратора направлен'
                                        f' владельцу чата @{user.username}, для ускорения процедуры добавления можете'
                                        f' написать ему')
-    await bot.send_message(chat_id=user.tg_id,
-                           text=f'Менеджер @{callback.from_user.username} запросил доступ к чату {group.title}')
+    try:
+        await bot.send_message(chat_id=user.tg_id,
+                               text=f'Менеджер @{callback.from_user.username} запросил доступ к чату {group.title}')
+    except:
+        pass
     await callback.answer()
 
 

@@ -328,15 +328,21 @@ async def process_select_group(callback: CallbackQuery, state: FSMContext, bot: 
         await rq.add_manager(tg_id=user.tg_id, data=data_)
         await callback.message.edit_text(text=f'Менеджер @{user.username} успешно добавлен в группу {group.title}',
                                          reply_markup=None)
-        await bot.send_message(chat_id=user.tg_id,
-                               text=f'Партнер {callback.from_user.username} добавил вас менеджером в группу {group.title}'
-                                    f'Перезапуститe бота /start при необходимости')
+        try:
+            await bot.send_message(chat_id=user.tg_id,
+                                   text=f'Партнер {callback.from_user.username} добавил вас менеджером в группу {group.title}'
+                                        f'Перезапуститe бота /start при необходимости')
+        except:
+            pass
     else:
         await rq.delete_manager(tg_id_manager=user.tg_id, group_id=group_id)
         await callback.message.edit_text(text=f'Менеджер @{user.username} успешно удален из группы {group.title}',
                                          reply_markup=None)
-        await bot.send_message(chat_id=user.tg_id,
-                               text=f'Партнер {callback.from_user.username} удалил вас из группы {group.title} как менеджера')
+        try:
+            await bot.send_message(chat_id=user.tg_id,
+                                   text=f'Партнер {callback.from_user.username} удалил вас из группы {group.title} как менеджера')
+        except:
+            pass
     await callback.answer()
 
 
@@ -363,16 +369,22 @@ async def process_select_group(callback: CallbackQuery, state: FSMContext, bot: 
         await rq.add_manager_all_group(tg_id=user.tg_id, data=data_)
         await callback.message.edit_text(text=f'Менеджер @{user.username} успешно добавлен во все ваши группы',
                                          reply_markup=None)
-        await bot.send_message(chat_id=user.tg_id,
-                               text=f'Партнер {callback.from_user.username} добавил вас менеджером во все свои группы. '
-                                    f'Перезапуститe бота /start при необходимости')
+        try:
+            await bot.send_message(chat_id=user.tg_id,
+                                   text=f'Партнер {callback.from_user.username} добавил вас менеджером во все свои группы. '
+                                        f'Перезапуститe бота /start при необходимости')
+        except:
+            pass
     else:
         groups_partner = await rq.get_group_partner(tg_id_partner=callback.message.chat.id)
         list_group_id_partner = [group.id for group in groups_partner]
         await rq.delete_manager_all_group(tg_id_manager=user.tg_id, group_ids=list_group_id_partner)
         await callback.message.edit_text(text=f'Менеджер @{user.username} успешно удален из всех ваших группы',
                                          reply_markup=None)
-        await bot.send_message(chat_id=user.tg_id,
-                               text=f'Партнер {callback.from_user.username} удалил вас как менеджера из всех своих групп. '
-                                    f'Перезапуститe бота /start при необходимости')
+        try:
+            await bot.send_message(chat_id=user.tg_id,
+                                   text=f'Партнер {callback.from_user.username} удалил вас как менеджера из всех своих групп. '
+                                        f'Перезапуститe бота /start при необходимости')
+        except:
+            pass
     await callback.answer()
