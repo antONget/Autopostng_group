@@ -164,7 +164,7 @@ async def process_select_group_manager(message: Message, bot: Bot) -> None:
             for group_id in list_ids_group_manager:
                 if int(group_id) not in list_ids_group:
                     list_ids_group.append(int(group_id))
-        print(list_ids_group)
+
         if not list_ids_group or list_ids_group == [0]:
             await message.answer(text='Вы не добавлены не в одну группу')
         else:
