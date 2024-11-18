@@ -124,6 +124,7 @@ async def process_get_group_title(message: Message, state: FSMContext, bot: Bot)
         data_add = {'tg_id_partner': message.from_user.id, 'group_id': group_id, 'title': group_title}
         await rq.add_group(group_id=group_id, data=data_add)
         await message.answer(text='Группа успешно добавлена')
+        await state.set_state(state=None)
     else:
         await message.answer(text='Название канала не должно превышать 32 символа')
 

@@ -139,14 +139,14 @@ async def process_select_group_manager(message: Message, bot: Bot) -> None:
     if user.role == rq.UserRole.manager:
         manager: Manager = await rq.get_manager(tg_id_manager=message.chat.id)
         if manager:
-            list_ids_group: list = manager.group_ids.split(',')
+            list_ids_group: list[str] = manager.group_ids.split(',')
             if list_ids_group == ['0']:
                 await message.answer(text='Вы не добавлены не в одну группу')
             else:
                 text = 'Ваши группы в которых вы можете размещать заявки:\n\n'
                 i = 0
                 for group_id in list_ids_group:
-                    group = await rq.get_group_id(id_=group_id)
+                    group = await rq.get_group_id(id_=int(group_id))
                     if group:
                         i += 1
                         text += f'<b>{i}. {group.title}</b>\n'
@@ -156,8 +156,16 @@ async def process_select_group_manager(message: Message, bot: Bot) -> None:
             await message.answer(text='Для публикации постов вам необходимо быть менеджером')
     elif user.role == rq.UserRole.partner:
         groups = await rq.get_group_partner(tg_id_partner=message.chat.id)
-        list_ids_group: list = [group.id for group in groups]
-        if list_ids_group == ['0']:
+        # список своих групп
+        list_ids_group: list[int] = [group.id for group in groups]
+        manager: Manager = await rq.get_manager(tg_id_manager=message.chat.id)
+        if manager:
+            list_ids_group_manager: list[str] = manager.group_ids.split(',')
+            for group_id in list_ids_group_manager:
+                if int(group_id) not in list_ids_group:
+                    list_ids_group.append(int(group_id))
+        print(list_ids_group)
+        if not list_ids_group or list_ids_group == [0]:
             await message.answer(text='Вы не добавлены не в одну группу')
         else:
             text = 'Ваши группы в которых вы можете размещать заявки:\n\n'

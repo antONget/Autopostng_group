@@ -47,6 +47,7 @@ async def select_change_manager(callback: CallbackQuery, state: FSMContext, bot:
     """
     logging.info('select_change_manager')
     select = callback.data.split('_')[-1]
+    # Добавление менеджера
     if select == 'add':
         list_manager: list = await rq.get_all_users()
         await state.update_data(change_manager='add')
@@ -56,7 +57,7 @@ async def select_change_manager(callback: CallbackQuery, state: FSMContext, bot:
                                              reply_markup=kb.keyboards_list_manager(list_manager=list_manager, block=0))
         else:
             await callback.answer(text='Нет пользователей в БД для назначения менеджерами', show_alert=True)
-
+    # Удаление менеджера
     elif select == 'del':
         await state.update_data(change_manager='del')
         list_managers: list = await rq.get_all_manager_partner(tg_id_partner=callback.message.chat.id)
@@ -145,7 +146,7 @@ async def process_forward_back_manager(callback: CallbackQuery, state: FSMContex
 @error_handler
 async def process_select_manager(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
-    Пагинация назад
+    Выбор менеджера
     :param callback: int(callback.data.split('_')[1]) номер блока для вывода
     :param state:
     :param bot:
@@ -159,6 +160,7 @@ async def process_select_manager(callback: CallbackQuery, state: FSMContext, bot
     # manager = await rq.get_manager(tg_id_manager=user.tg_id)
     data = await state.get_data()
     change_manager = data['change_manager']
+    # Добавление менеджера
     if change_manager == 'add':
         partner = await rq.get_user(tg_id=callback.message.chat.id)
         if user.id == partner.id:
@@ -308,13 +310,14 @@ async def process_forward_back_manager(callback: CallbackQuery, state: FSMContex
 @error_handler
 async def process_select_group(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
-
+    Выбор группы для добавления мнеджера
     :param callback: int(callback.data.split('_')[1]) номер блока для вывода
     :param state:
     :param bot:
     :return:
     """
     logging.info(f'process_select_group: {callback.message.chat.id}')
+    # получаем id группы
     group_id: str = callback.data.split('_')[-1]
     data = await state.get_data()
     manager_tg_id = data['manager_tg_id']
@@ -322,8 +325,10 @@ async def process_select_group(callback: CallbackQuery, state: FSMContext, bot: 
     change_manager = data['change_manager']
     user = await rq.get_user(tg_id=manager_tg_id)
     group = await rq.get_group_id(id_=int(group_id))
+    # Добавляем менеджера в группу
     if change_manager == 'add':
-        await rq.set_role_user(id_user=user.id, role=rq.UserRole.manager)
+        if not user.role == rq.UserRole.partner:
+            await rq.set_role_user(id_user=user.id, role=rq.UserRole.manager)
         data_ = {"tg_id_manager": user.tg_id, 'group_ids': group_id}
         await rq.add_manager(tg_id=user.tg_id, data=data_)
         await callback.message.edit_text(text=f'Менеджер @{user.username} успешно добавлен в группу {group.title}',
@@ -362,7 +367,8 @@ async def process_select_group(callback: CallbackQuery, state: FSMContext, bot: 
     manager_tg_id = data['manager_tg_id']
     user = await rq.get_user(tg_id=manager_tg_id)
     if change_manager == 'add':
-        await rq.set_role_user(id_user=user.id, role=rq.UserRole.manager)
+        if not user.role == rq.UserRole.partner:
+            await rq.set_role_user(id_user=user.id, role=rq.UserRole.manager)
         groups_partner = await rq.get_group_partner(tg_id_partner=callback.message.chat.id)
         list_group_id_partner = [group.id for group in groups_partner]
         data_ = {"tg_id_manager": user.tg_id, 'group_ids': list_group_id_partner}

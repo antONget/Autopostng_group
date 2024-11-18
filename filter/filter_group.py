@@ -14,10 +14,13 @@ async def is_admin(message: Message, bot: Bot):
 
 
 async def is_admin_bot_in_group(group_peer_id: int, bot: Bot):
-    bot = await bot.get_chat_member(group_peer_id, bot.id)
-    if bot.status != ChatMemberStatus.ADMINISTRATOR:
-        return False
-    return True
+    try:
+        bot = await bot.get_chat_member(group_peer_id, bot.id)
+        if bot.status != ChatMemberStatus.ADMINISTRATOR:
+            return False
+        return True
+    except:
+        pass
 
 
 def parse_time(time: str | None):
