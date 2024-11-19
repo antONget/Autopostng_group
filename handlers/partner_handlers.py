@@ -23,7 +23,7 @@ class Partner(StatesGroup):
 
 @router.message(F.text == 'Менеджеры', or_f(IsSuperAdmin(), IsRolePartner()))
 @error_handler
-async def change_list_manager(message: Message, bot: Bot) -> None:
+async def change_list_manager(message: Message, bot: Bot, state: FSMContext) -> None:
     """
     Меню правки списка менеджеров
     :param message:
@@ -31,6 +31,12 @@ async def change_list_manager(message: Message, bot: Bot) -> None:
     :return:
     """
     logging.info('change_list_manager')
+    await state.set_state(state=None)
+    try:
+        await bot.delete_message(chat_id=message.chat.id,
+                                 message_id=message.message_id - 1)
+    except:
+        pass
     await message.answer(text='Выберите действие, которое нужно выполнить со списком менеджеров',
                          reply_markup=kb.keyboard_change_list_manager())
 
@@ -198,6 +204,10 @@ async def process_get_manager(message: Message, state: FSMContext, bot: Bot) -> 
     :return:
     """
     logging.info(f'process_get_manager: {message.chat.id}')
+    if message.text in ['Группы для публикации', 'Менеджеры', 'Мои группы', 'Партнеры']:
+        await message.answer(text='Добавление менеджера отменено')
+        await state.set_state(state=None)
+        return
     try:
         username = message.text.split('@')[-1]
         user = await rq.get_user_username(username=username)

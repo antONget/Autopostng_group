@@ -177,8 +177,15 @@ async def process_get_partner(message: Message, state: FSMContext, bot: Bot) -> 
     :return:
     """
     logging.info(f'process_get_partner: {message.chat.id}')
-    await bot.delete_message(chat_id=message.chat.id,
-                             message_id=message.message_id-1)
+    if message.text in ['Группы для публикации', 'Менеджеры', 'Мои группы', 'Партнеры']:
+        await message.answer(text='Добавление администратора отменено')
+        await state.set_state(state=None)
+        return
+    try:
+        await bot.delete_message(chat_id=message.chat.id,
+                                 message_id=message.message_id-1)
+    except:
+        pass
     try:
         username_ = message.text.split('@')[-1]
         user = await rq.get_user_username(username=username_)
