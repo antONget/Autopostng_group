@@ -316,6 +316,13 @@ async def publish_post(callback: CallbackQuery, state: FSMContext, bot: Bot):
         groups_partner: list = await rq.get_group_partner(tg_id_partner=callback.message.chat.id)
         list_ids_group: list = [group.id for group in groups_partner]
 
+        manager: Manager = await rq.get_manager(tg_id_manager=callback.message.chat.id)
+        if manager:
+            list_ids_group_manager: list[str] = manager.group_ids.split(',')
+            for group_id in list_ids_group_manager:
+                if int(group_id) not in list_ids_group:
+                    list_ids_group.append(int(group_id))
+
         await callback.message.answer(text='Публикация поста по списку групп запущена')
         data = await state.get_data()
         message_chat = []
