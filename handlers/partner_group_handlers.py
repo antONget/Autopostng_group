@@ -117,6 +117,7 @@ async def process_get_group_title(message: Message, state: FSMContext, bot: Bot)
     group_title = message.text
     if group_title in ['Группы для публикации', 'Менеджеры', 'Мои группы', 'Партнеры']:
         await message.answer(text='Добавление группы отменено')
+        await state.set_state(state=None)
         return
     if len(group_title) <= 32:
         data = await state.get_data()
