@@ -103,7 +103,6 @@ async def process_forward_manager(callback: CallbackQuery, state: FSMContext, bo
         await callback.message.edit_text(text='Выбeрите пользователя или пришлите его username'
                                               ' (например, @manager)',
                                          reply_markup=keyboard)
-    await state.set_state(Partner.manager)
     await callback.answer()
 
 
@@ -138,7 +137,6 @@ async def process_forward_back_manager(callback: CallbackQuery, state: FSMContex
         await callback.message.edit_text(text='Выбeрите пользователя или пришлите его username'
                                               ' (например, @manager)',
                                          reply_markup=keyboard)
-    await state.set_state(Partner.manager)
     await callback.answer()
 
 
