@@ -28,15 +28,11 @@ async def change_list_manager(message: Message, bot: Bot, state: FSMContext) -> 
     Меню правки списка менеджеров
     :param message:
     :param bot:
+    :param state:
     :return:
     """
     logging.info('change_list_manager')
     await state.set_state(state=None)
-    try:
-        await bot.delete_message(chat_id=message.chat.id,
-                                 message_id=message.message_id - 1)
-    except:
-        pass
     await message.answer(text='Выберите действие, которое нужно выполнить со списком менеджеров',
                          reply_markup=kb.keyboard_change_list_manager())
 
