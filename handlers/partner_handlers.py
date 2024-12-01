@@ -205,16 +205,22 @@ async def process_get_manager(message: Message, state: FSMContext, bot: Bot) -> 
         await state.set_state(state=None)
         return
     try:
+        await bot.delete_message(chat_id=message.chat.id,
+                                 message_id=message.message_id-1)
         username = message.text.split('@')[-1]
         user = await rq.get_user_username(username=username)
+        # если пользователь найден в БД
         if user:
             data = await state.get_data()
+            # получаем действие с менеджером (удалить/добавить)
             change_manager = data['change_manager']
             await state.update_data(manager_tg_id=user.tg_id)
             if change_manager == 'add':
+                # получаем список групп партнера для добавления в них менеджера
                 list_groups: list = await rq.get_group_partner(tg_id_partner=message.chat.id)
+                # если список групп есть то выводим его для выбора
                 if list_groups:
-                    await message.edit_text(text='Выберите группу для добавления менеджера',
+                    await message.answer(text='Выберите группу для добавления менеджера',
                                             reply_markup=await kb.keyboards_list_group(list_group=list_groups,
                                                                                        block=0,
                                                                                        change_manager='add',
@@ -226,7 +232,7 @@ async def process_get_manager(message: Message, state: FSMContext, bot: Bot) -> 
                 list_groups = await rq.get_group_manager_partner(tg_id_manager=user.tg_id,
                                                                  tg_id_partner=message.chat.id)
                 if list_groups:
-                    await message.edit_text(text='Выберите группу для удаления менеджера',
+                    await message.answer(text='Выберите группу для удаления менеджера',
                                             reply_markup=await kb.keyboards_list_group(list_group=list_groups,
                                                                                        block=0,
                                                                                        change_manager='del',
