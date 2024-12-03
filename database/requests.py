@@ -334,13 +334,17 @@ async def get_group_not_manager(tg_id_manager: int) -> list[Group]:
     logging.info(f'get_group_manager_partner')
     async with async_session() as session:
         manager = await get_manager(tg_id_manager=tg_id_manager)
-        group_ids_manager: list = manager.group_ids.split(',')
-        all_groups: list[Group] = await get_all_group()
-        group_not_manager = []
-        for group in all_groups:
-            if str(group.id) not in group_ids_manager:
-                group_not_manager.append(group)
-        return group_not_manager
+        if manager:
+            group_ids_manager: list = manager.group_ids.split(',')
+            all_groups: list[Group] = await get_all_group()
+            group_not_manager = []
+            for group in all_groups:
+                if str(group.id) not in group_ids_manager:
+                    group_not_manager.append(group)
+            return group_not_manager
+        else:
+            group_not_manager = []
+            return group_not_manager
 
 
 async def delete_group(id_: int):
