@@ -13,6 +13,7 @@ from config_data.config import Config, load_config
 from handlers import other_handlers, user_handlers, ban, unban, admin_handlers, partner_handlers,\
     partner_group_handlers, manager_handlers, partner_frames_handlers
 from database.models import async_main
+from notify_admins import on_startup_notify
 # Инициализируем logger
 logger = logging.getLogger(__name__)
 
@@ -23,8 +24,8 @@ async def main():
     # Конфигурируем логирование
     logging.basicConfig(
         level=logging.INFO,
-        # filename="py_log.log",
-        # filemode='w',
+        filename="py_log.log",
+        filemode='w',
         format='%(filename)s:%(lineno)d #%(levelname)-8s '
                '[%(asctime)s] - %(name)s - %(message)s')
 
@@ -37,6 +38,7 @@ async def main():
     # Инициализируем бот и диспетчер
     bot = Bot(token=config.tg_bot.token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()
+    await on_startup_notify(bot=bot)
     # Регистрируем router в диспетчере
     dp.include_router(user_handlers.router)
     dp.include_router(admin_handlers.router)
