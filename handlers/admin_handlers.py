@@ -6,6 +6,7 @@ from aiogram.filters import StateFilter
 
 from utils.error_handling import error_handler
 from database import requests as rq
+from database.models import User
 from keyboards import admin_keyboards as kb
 from filter.admin_filter import IsSuperAdmin
 from config_data.config import Config, load_config
@@ -47,7 +48,7 @@ async def select_change(callback: CallbackQuery, state: FSMContext, bot: Bot):
     logging.info('change_list_partner')
     select = callback.data.split('_')[-1]
     if select == 'add':
-        list_partners = await rq.get_all_not_partner()
+        list_partners: list[User] = await rq.get_all_not_partner()
         await state.update_data(change_partner='add')
         if list_partners:
             await callback.message.edit_text(text='Выберите партнера для добавления или пришлите его username'
@@ -72,7 +73,7 @@ async def select_change(callback: CallbackQuery, state: FSMContext, bot: Bot):
 # Вперед
 @router.callback_query(F.data.startswith('partnerforward_'))
 @error_handler
-async def process_forward_add_partner(callback: CallbackQuery, state: FSMContext, bot: Bot):
+async def process_forward_partner(callback: CallbackQuery, state: FSMContext, bot: Bot):
     """
     Пагинация вперед
     :param callback: int(callback.data.split('_')[1]) номер блока для вывода
@@ -80,7 +81,7 @@ async def process_forward_add_partner(callback: CallbackQuery, state: FSMContext
     :param bot:
     :return:
     """
-    logging.info(f'process_forward_add_partner: {callback.message.chat.id}')
+    logging.info(f'process_forward_partner: {callback.message.chat.id}')
     data = await state.get_data()
     change_partner = data['change_partner']
     if change_partner == 'add':
@@ -107,7 +108,7 @@ async def process_forward_add_partner(callback: CallbackQuery, state: FSMContext
 # Назад
 @router.callback_query(F.data.startswith('partnerback_'))
 @error_handler
-async def process_forward_back_partner(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
+async def process_back_partner(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
     Пагинация назад
     :param callback: int(callback.data.split('_')[1]) номер блока для вывода
@@ -115,7 +116,7 @@ async def process_forward_back_partner(callback: CallbackQuery, state: FSMContex
     :param bot:
     :return:
     """
-    logging.info(f'process_forward_back_partner: {callback.message.chat.id}')
+    logging.info(f'process_back_partner: {callback.message.chat.id}')
     data = await state.get_data()
     change_partner = data['change_partner']
     if change_partner == 'add':

@@ -44,9 +44,13 @@ async def start(message: Message, state: FSMContext, bot: Bot) -> None:
         else:
             data = {"tg_id": tg_id, "username": username, "role": rq.UserRole.user}
             await rq.add_user(tg_id=tg_id, data=data)
-            await message.answer(text='Добро пожаловать!\n'
-                                      'Для получения доступа к функционалу бота обратитесь к администратору'
-                                      ' проекта @Aleksandr9828')
+            await message.answer(text='Добро пожаловать!\n',
+                                 reply_markup=kb.keyboard_main_manager())
+            await message.answer(text='Выберите группу для размещение заявок',
+                                 reply_markup=kb.keyboard_main_manager_inline())
+            # await message.answer(text='Добро пожаловать!\n'
+            #                           'Для получения доступа к функционалу бота обратитесь к администратору'
+            #                           ' проекта @Aleksandr9828')
     else:
         if user.role == rq.UserRole.admin:
             await message.answer(text='Добро пожаловать!\n'
@@ -56,13 +60,16 @@ async def start(message: Message, state: FSMContext, bot: Bot) -> None:
             await message.answer(text='Добро пожаловать!\n'
                                       'Вы являетесь партнером проекта',
                                  reply_markup=kb.keyboard_main_partner())
-        elif user.role == rq.UserRole.manager:
-            await message.answer(text='Добро пожаловать!\n'
-                                      'Вы являетесь менеджером проекта',
+        # elif user.role == rq.UserRole.manager:
+        #     await message.answer(text='Добро пожаловать!\n',
+        #                          reply_markup=kb.keyboard_main_manager())
+        #     await message.answer(text='Выберите группу для размещение заявок',
+        #                          reply_markup=kb.keyboard_main_manager_inline())
+        else:
+            await message.answer(text='Добро пожаловать!\n',
                                  reply_markup=kb.keyboard_main_manager())
             await message.answer(text='Выберите группу для размещение заявок',
                                  reply_markup=kb.keyboard_main_manager_inline())
-        else:
-            await message.answer(text='Добро пожаловать!\n'
-                                      'Для получения доступа к функционалу бота обратитесь к администратору'
-                                      ' проекта @Aleksandr9828')
+            # await message.answer(text='Добро пожаловать!\n'
+            #                           'Для получения доступа к функционалу бота обратитесь к администратору'
+            #                           ' проекта @Aleksandr9828')

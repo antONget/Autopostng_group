@@ -1,4 +1,4 @@
-from database.models import User, Manager, Group, Post
+from database.models import User, Manager, Group, Post, Frame, Subscribe
 from database.models import async_session
 from sqlalchemy import select
 from dataclasses import dataclass
@@ -292,6 +292,7 @@ async def get_group_partner(tg_id_partner: int) -> list[Group]:
     async with async_session() as session:
         groups = await session.scalars(select(Group).where(Group.tg_id_partner == tg_id_partner))
         list_groups = [group for group in groups]
+        logging.info(f'{list_groups}')
         return list_groups
 
 
@@ -418,3 +419,149 @@ async def delete_post(id_: int):
         if post:
             await session.delete(post)
             await session.commit()
+
+
+""" FRAME """
+
+
+@dataclass
+class ColumnFrame:
+    title = 'title'
+    cost = 'cost'
+    period = 'period'
+
+
+async def add_frame(data: dict) -> int:
+    """
+    Добавляем новый тариф
+    :param data:
+    :return:
+    """
+    logging.info(f'add_frame')
+    async with async_session() as session:
+        new_frame = Frame(**data)
+        session.add(new_frame)
+        await session.flush()
+        id_ = new_frame.id
+        await session.commit()
+        return id_
+
+
+async def get_frame_id(id_: int) -> Frame:
+    """
+    Получаем тариф по id
+    :param id_:
+    :return:
+    """
+    logging.info(f'get_frame_id')
+    async with async_session() as session:
+        return await session.scalar(select(Frame).where(Frame.id == id_))
+
+
+async def get_frames() -> list[Frame]:
+    """
+    Получаем все тарифы
+    :return:
+    """
+    logging.info(f'get_frames')
+    async with async_session() as session:
+        frames = await session.scalars(select(Frame))
+        list_frames = [frame for frame in frames]
+        return list_frames
+
+
+async def set_frame_id(id_frame: int, id_group: str) -> None:
+    """
+    Обновляем список групп в тарифе
+    :param id_frame:
+    :param id_group:
+    :return:
+    """
+    logging.info(f'set_frame_id')
+    async with async_session() as session:
+        frame = await session.scalar(select(Frame).where(Frame.id == id_frame))
+        if frame:
+            list_id_group: list = frame.list_id_group.split(',')
+            if id_group not in list_id_group:
+                list_id_group.append(id_group)
+            else:
+                list_id_group.remove(id_group)
+            list(set(list_id_group))
+            frame.list_id_group = ','.join(list_id_group)
+            await session.commit()
+
+
+async def get_frame_tg_id(tg_id: int) -> list[Frame]:
+    """
+    Получаем тарифы партнера
+    :param tg_id:
+    :return:
+    """
+    logging.info(f'get_frame_id tg_id: {tg_id}')
+    async with async_session() as session:
+        frames = await session.scalars(select(Frame).where(Frame.tg_id_creator == tg_id))
+        list_frame = [frame for frame in frames]
+        return list_frame
+
+
+async def del_frame_id(id_: int) -> None:
+    """
+    Удаление тарифа по id
+    :param id_:
+    :return:
+    """
+    logging.info(f'del_frame_id')
+    async with async_session() as session:
+        frame = await session.scalar(select(Frame).where(Frame.id == id_))
+        if frame:
+            await session.delete(frame)
+            await session.commit()
+
+
+async def set_frame_id_column(id_frame: int, column: str, change: str | int) -> None:
+    """
+    Обновляем значение поля в тарифе по его id
+    :param id_frame:
+    :param column:
+    :param change:
+    :return:
+    """
+    logging.info(f'set_frame_id')
+    async with async_session() as session:
+        frame = await session.scalar(select(Frame).where(Frame.id == id_frame))
+        if frame:
+            if column == 'title':
+                frame.title_frame = change
+            elif column == 'cost':
+                frame.cost_frame = change
+            elif column == 'period':
+                frame.period_frame = change
+            await session.commit()
+
+
+""" SUBSCRIBE """
+
+
+async def add_subscribe(data: dict) -> None:
+    """
+    Добавление подписки пользователя
+    :param data:
+    :return:
+    """
+    logging.info(f'add_subscribe')
+    async with async_session() as session:
+        session.add(Subscribe(**data))
+        await session.commit()
+
+
+async def get_subscribes_user(tg_id: int) -> list[Subscribe]:
+    """
+    Получение списка подписок пользователя
+    :param tg_id:
+    :return:
+    """
+    logging.info('get_subscribes_user')
+    async with async_session() as session:
+        subscribes = await session.scalars(select(Subscribe).where(Subscribe.tg_id == tg_id))
+        list_subscribes = [subscribe for subscribe in subscribes]
+        return list_subscribes

@@ -25,14 +25,14 @@ class Partner(StatesGroup):
 
 @router.message(F.text == 'Мои группы', or_f(IsSuperAdmin(), IsRolePartner()))
 @error_handler
-async def change_list_manager(message: Message, bot: Bot) -> None:
+async def change_list_my_groups(message: Message, bot: Bot) -> None:
     """
     Меню правки списка менеджеров
     :param message:
     :param bot:
     :return:
     """
-    logging.info('change_list_manager')
+    logging.info('change_list_my_groups')
     await message.answer(text='Выберите действие, которое нужно выполнить со списком групп',
                          reply_markup=kb.keyboard_change_list_group())
 
@@ -70,15 +70,20 @@ async def select_change_group(callback: CallbackQuery, state: FSMContext, bot: B
 
 @router.message(F.text, StateFilter(Partner.group_id))
 @error_handler
-async def process_get_manager(message: Message, state: FSMContext, bot: Bot) -> None:
+async def process_get_group(message: Message, state: FSMContext, bot: Bot) -> None:
     """
-    Добавление/удаление менеджера по username
+    Добавление группы партнера
     :param message:
     :param state:
     :param bot:
     :return:
     """
-    logging.info(f'process_get_manager: {message.chat.id}')
+    logging.info(f'process_get_group: {message.chat.id}')
+    if message.text in ['Тарифы', 'Мои группы', 'Партнеры']:
+        await state.set_state(state=None)
+        await message.answer(text='Добавление группы отменено')
+        return
+
     try:
         group_id = int(message.text)
     except:
@@ -160,7 +165,7 @@ async def process_forward_group(callback: CallbackQuery, state: FSMContext, bot:
 # Назад
 @router.callback_query(F.data.startswith('groupdelback_'))
 @error_handler
-async def process_forward_back_group(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
+async def process_back_group(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
     """
     Пагинация назад
     :param callback: int(callback.data.split('_')[1]) номер блока для вывода
@@ -168,7 +173,7 @@ async def process_forward_back_group(callback: CallbackQuery, state: FSMContext,
     :param bot:
     :return:
     """
-    logging.info(f'process_forward_back_group: {callback.message.chat.id}')
+    logging.info(f'process_back_group: {callback.message.chat.id}')
     list_group = await rq.get_group_partner(tg_id_partner=callback.message.chat.id)
     count_block = len(list_group) // 6 + 1
     num_block = int(callback.data.split('_')[-1]) - 1

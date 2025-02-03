@@ -5,18 +5,18 @@ import logging
 def keyboard_main_admin() -> ReplyKeyboardMarkup:
     logging.info("keyboard_main_admin")
     button_1 = KeyboardButton(text='Мои группы')
-    button_2 = KeyboardButton(text='Менеджеры')
     button_3 = KeyboardButton(text='Партнеры')
-    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_3]], resize_keyboard=True)
+    button_4 = KeyboardButton(text='Тарифы')
+    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_3], [button_4]], resize_keyboard=True)
     return keyboard
 
 
 def keyboard_main_partner() -> ReplyKeyboardMarkup:
     logging.info("keyboard_main_partner")
     button_1 = KeyboardButton(text='Мои группы')
-    button_2 = KeyboardButton(text='Менеджеры')
     button_3 = KeyboardButton(text='Группы для публикации')
-    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_3]], resize_keyboard=True)
+    button_4 = KeyboardButton(text='Тарифы')
+    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_3], [button_4]], resize_keyboard=True)
     return keyboard
 
 

@@ -1,4 +1,4 @@
-from sqlalchemy import String, Integer
+from sqlalchemy import String, Integer, BigInteger
 from sqlalchemy.orm import Mapped, mapped_column, DeclarativeBase
 from sqlalchemy.ext.asyncio import AsyncAttrs, async_sessionmaker, create_async_engine
 
@@ -45,6 +45,27 @@ class Post(Base):
     posts_text: Mapped[str] = mapped_column(String())
     posts_chat_message: Mapped[str] = mapped_column(String())
     post_date: Mapped[str] = mapped_column(String())
+
+
+class Frame(Base):
+    __tablename__ = 'frames'
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    tg_id_creator = mapped_column(Integer)
+    title_frame: Mapped[str] = mapped_column(String())
+    cost_frame: Mapped[str] = mapped_column(String())
+    period_frame: Mapped[str] = mapped_column(String())
+    list_id_group: Mapped[str] = mapped_column(String(), default='')
+
+
+class Subscribe(Base):
+    __tablename__ = 'Subscribes'
+    id: Mapped[int] = mapped_column(Integer, primary_key=True)
+    tg_id: Mapped[int] = mapped_column(BigInteger)
+    frame_id: Mapped[int] = mapped_column(Integer)
+    date_start: Mapped[str] = mapped_column(String)
+    date_completion: Mapped[str] = mapped_column(String)
+    group_id_list: Mapped[str] = mapped_column(String)
 
 
 async def async_main():
