@@ -480,7 +480,6 @@ async def confirm_change_group_frame(callback: CallbackQuery, state: FSMContext,
     logging.info('confirm_change_group_frame')
     data = await state.get_data()
     id_frame = data['id_frame']
-    data = await state.get_data()
     info_frame: Frame = await rq.get_frame_id(id_=data['id_frame'])
     if not info_frame.list_id_group:
         await callback.answer(text=f'Тариф не может быть пустым, добавьте хотя бы одну группу',
@@ -490,3 +489,21 @@ async def confirm_change_group_frame(callback: CallbackQuery, state: FSMContext,
     await callback.message.edit_text(text=f'Выберите поля тарифа {info_frame.title_frame} для его редактирования\n'
                                           f'Для завершения нажмите "Подтвердить"',
                                      reply_markup=kb.keyboard_column_frame(info_frame=info_frame))
+
+
+@router.callback_query(F.data == 'confirm_edit_frame')
+@error_handler
+async def confirm_edit_frame(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    """
+    Подтверждение изменение полей тарифа
+    :param callback:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info('confirm_edit_frame')
+    data = await state.get_data()
+    info_frame: Frame = await rq.get_frame_id(id_=int(data['id_frame']))
+    await callback.message.answer(text=f'Тариф <b>{info_frame.title_frame}</b> успешно изменен',
+                                  reply_markup=None)
+    await callback.answer()
