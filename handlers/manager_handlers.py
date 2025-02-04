@@ -143,8 +143,8 @@ async def process_select_group(callback: CallbackQuery, state: FSMContext, bot: 
                 info_group: Group = await rq.get_group_id(id_=group_id_)
                 if info_group:
                     text += f'{info_group.title}\n'
-            text += f'<i>Стоимость:</i> {info_frame.cost_frame}\n' \
-                    f'<i>Период:</i> {info_frame.period_frame}\n\n'
+            text += f'<i>Стоимость:</i> {info_frame.cost_frame} ₽\n' \
+                    f'<i>Период:</i> {info_frame.period_frame} дней\n\n'
     if text == f'Для публикации в группу {info_group.title} выберите тариф:\n':
         await callback.message.edit_text(text=f'Для группы {info_group.title} тарифы не определены',
                                          reply_markup=None)
