@@ -7,16 +7,20 @@ def keyboard_main_admin() -> ReplyKeyboardMarkup:
     button_1 = KeyboardButton(text='Мои группы')
     button_3 = KeyboardButton(text='Партнеры')
     button_4 = KeyboardButton(text='Тарифы')
-    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_3], [button_4]], resize_keyboard=True)
+    button_5 = KeyboardButton(text='Реквизиты')
+    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_3], [button_4], [button_5]],
+                                   resize_keyboard=True)
     return keyboard
 
 
 def keyboard_main_partner() -> ReplyKeyboardMarkup:
     logging.info("keyboard_main_partner")
     button_1 = KeyboardButton(text='Мои группы')
-    button_3 = KeyboardButton(text='Группы для публикации')
-    button_4 = KeyboardButton(text='Тарифы')
-    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_3], [button_4]], resize_keyboard=True)
+    button_2 = KeyboardButton(text='Группы для публикации')
+    button_3 = KeyboardButton(text='Тарифы')
+    button_4 = KeyboardButton(text='Реквизиты')
+    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_3], [button_4]],
+                                   resize_keyboard=True)
     return keyboard
 
 

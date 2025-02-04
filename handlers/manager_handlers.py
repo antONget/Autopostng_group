@@ -166,10 +166,13 @@ async def process_select_frame_to_pay(callback: CallbackQuery, state: FSMContext
     """
     logging.info(f'process_select_frame_to_pay: {callback.message.chat.id}')
     frame_id: int = int(callback.data.split('_')[-1])
-    await callback.message.answer(text='Для публикации объявлений необходимо произвести оплату по инструкции.\n'
-                                       'Инструкция по оплате для каждого партнера своя\n\n'
-                                       'После оплаты сохраните чек и пришлите его нажав кнопку "Отправить чек"',
+    info_frame: Frame = await rq.get_frame_id(id_=frame_id)
+    info_partner: User = await rq.get_user(tg_id=info_frame.tg_id_creator)
+    await callback.message.answer(text=f'Для публикации объявлений необходимо произвести оплату по инструкции.\n\n'
+                                       f'{info_partner.requisites}\n\n'
+                                       f'После оплаты сохраните чек и пришлите его нажав кнопку "Отправить чек"',
                                   reply_markup=kb.keyboard_check_payment(id_frame=frame_id))
+    await callback.answer()
 
 
 @router.callback_query(F.data.startswith('send_check_'))
@@ -186,6 +189,7 @@ async def process_get_check(callback: CallbackQuery, state: FSMContext, bot: Bot
     await callback.message.answer(text='Отправьте чек об оплате')
     await state.update_data(id_frame=callback.data.split('_')[-1])
     await state.set_state(ManagerState.check_pay)
+    await callback.answer()
 
 
 @router.message(F.photo, StateFilter(ManagerState.check_pay))
@@ -267,7 +271,7 @@ async def user_group_for_publish(message: Message, bot: Bot) -> None:
         current_date = datetime.now().strftime('%d-%m-%Y %H:%M')
         delta_time = (datetime.strptime(last_subscribe.date_completion, date_format) -
                       datetime.strptime(current_date, date_format))
-        if delta_time.days > 0:
+        if delta_time.days >= 0:
             active_subscribe = True
     if not subscribes or not active_subscribe:
         list_groups: list = await rq.get_all_group()
@@ -356,7 +360,7 @@ async def process_publish_post(callback: CallbackQuery, state: FSMContext, bot: 
         current_date = datetime.now().strftime('%d-%m-%Y %H:%M')
         delta_time = (datetime.strptime(last_subscribe.date_completion, date_format) -
                       datetime.strptime(current_date, date_format))
-        if delta_time.days > 0:
+        if delta_time.days >= 0:
             active_subscribe = True
     if not subscribes or not active_subscribe:
         list_groups: list = await rq.get_all_group()
@@ -368,7 +372,8 @@ async def process_publish_post(callback: CallbackQuery, state: FSMContext, bot: 
             await callback.message.answer(text='Пока в бота не добавлены группы, в которых вы могли бы разместить'
                                                ' объявления')
     else:
-        await callback.message.answer(text="Пришлите текст заявки для размещения в группах")
+        await callback.message.edit_text(text="Пришлите текст заявки для размещения в группах",
+                                         reply_markup=None)
         await state.set_state(ManagerState.text_post)
     await callback.answer()
 
@@ -424,8 +429,8 @@ async def process_pass_location(callback: CallbackQuery, state: FSMContext, bot:
     logging.info(f'process_publish_post: {callback.message.chat.id}')
     await state.update_data(location='none')
     data = await state.get_data()
-    await callback.message.answer(text=data['text_post'],
-                                  reply_markup=kb.keyboard_show_post_(manager_tg_id=callback.message.chat.id))
+    await callback.message.edit_text(text=data['text_post'],
+                                     reply_markup=kb.keyboard_show_post_(manager_tg_id=callback.message.chat.id))
     await state.set_state(state=None)
     await callback.answer()
 
@@ -475,8 +480,8 @@ async def publish_post(callback: CallbackQuery, state: FSMContext, bot: Bot):
                                                   location=data['location']))
             message_chat.append(f'{group.group_id}!{post.message_id}')
             await callback.message.answer(text=f'Пост опубликован в группе {group.title}')
-    await callback.answer(text=f'Публикация поста по списку групп завершена',
-                          show_alert=True)
+    await callback.message.edit_text(text=f'Публикация поста по списку групп завершена',
+                                     reply_markup=None)
     posts_chat_message = ','.join(message_chat)
     data_ = {'tg_id_manager': callback.message.chat.id, 'posts_text': data['text_post'],
              'posts_chat_message': posts_chat_message, 'post_date': datetime.now().strftime('%d-%m-%Y %H:%M')}
@@ -613,11 +618,12 @@ async def process_delete_post(callback: CallbackQuery, state: FSMContext, bot: B
     logging.info(f'process_delete_post: {callback.message.chat.id}')
     list_posts: list[Post] = await rq.get_post_manager(tg_id_manager=callback.message.chat.id)
     if not list_posts:
-        await callback.message.answer(text='Нет постов для удаления.')
+        await callback.message.edit_text(text='Нет постов для удаления.',
+                                         reply_markup=None)
         await callback.answer()
         return
-    await callback.message.answer(text=f'{list_posts[0].posts_text}',
-                                  reply_markup=kb.keyboards_list_post(block=0, id_post=list_posts[0].id))
+    await callback.message.edit_text(text=f'{list_posts[0].posts_text}',
+                                     reply_markup=kb.keyboards_list_post(block=0, id_post=list_posts[0].id))
     await callback.answer()
 
 

@@ -8,8 +8,9 @@ from aiogram.exceptions import TelegramBadRequest
 
 from utils.error_handling import error_handler
 from database import requests as rq
-from database.models import Frame, Group
+from database.models import Frame, Group, User
 from keyboards import partner_frames_keyboards as kb
+from keyboards.partner_requisites_keyboards import keyboard_requisites_add
 from filter.admin_filter import IsSuperAdmin
 from filter.user_filter import IsRolePartner
 from config_data.config import Config, load_config
@@ -39,6 +40,11 @@ async def press_button_frames(message: Message, state: FSMContext, bot: Bot) -> 
     """
     logging.info('press_button_frames')
     await state.set_state(state=None)
+    info_user: User = await rq.get_user(tg_id=message.from_user.id)
+    if info_user.requisites == 'none':
+        await message.answer(text='Для добавления тарифа, сначала добавьте реквизиты для перевода',
+                             reply_markup=keyboard_requisites_add())
+        return
     await message.answer(text='Выберите действие с тарифом',
                          reply_markup=kb.keyboard_action_frames())
 

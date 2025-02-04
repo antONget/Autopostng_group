@@ -17,6 +17,11 @@ class UserRole:
 
 
 async def get_user(tg_id: int) -> User:
+    """
+    Получаем информацию о пользователе по его telegram_id
+    :param tg_id:
+    :return:
+    """
     logging.info(f'get_user')
     async with async_session() as session:
         return await session.scalar(select(User).where(User.tg_id == tg_id))
@@ -98,6 +103,19 @@ async def set_role_user(id_user: int, role: str) -> None:
             await session.commit()
 
 
+async def set_requisites(tg_id: int, requisites: str) -> None:
+    """
+    Обновляем реквизиты пользователя
+    :return:
+    """
+    logging.info(f'set_requisites')
+    async with async_session() as session:
+        user = await session.scalar(select(User).where(User.tg_id == tg_id))
+        if user:
+            user.requisites = requisites
+            await session.commit()
+
+
 async def get_user_username(username: str) -> User:
     logging.info(f'get_user_username')
     async with async_session() as session:
@@ -105,6 +123,11 @@ async def get_user_username(username: str) -> User:
 
 
 async def get_user_id(id_user: int) -> User:
+    """
+    Получаем информацию о пользователе по его id в базе данных User
+    :param id_user:
+    :return:
+    """
     logging.info(f'get_user_id')
     async with async_session() as session:
         return await session.scalar(select(User).where(User.id == id_user))

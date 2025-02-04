@@ -18,6 +18,7 @@ class User(Base):
     tg_id = mapped_column(Integer)
     username: Mapped[str] = mapped_column(String(20), default='none')
     role: Mapped[str] = mapped_column(String(20), default='user')
+    requisites: Mapped[str] = mapped_column(String(), default='none')
 
 
 class Group(Base):
