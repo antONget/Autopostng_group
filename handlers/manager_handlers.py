@@ -255,7 +255,7 @@ async def process_confirm_cancel_payment(callback: CallbackQuery, state: FSMCont
 
 @router.message(F.text == 'Группы для публикации')
 @error_handler
-async def user_group_for_publish(message: Message, bot: Bot) -> None:
+async def user_group_for_publish(message: Message, state: FSMContext, bot: Bot) -> None:
     """
     Менеджер выбирает группу
     :param message:
@@ -265,14 +265,17 @@ async def user_group_for_publish(message: Message, bot: Bot) -> None:
     logging.info('process_select_group_manager')
     subscribes: list[Subscribe] = await rq.get_subscribes_user(tg_id=message.from_user.id)
     active_subscribe = False
+    list_active_subscribe = []
     if subscribes:
-        last_subscribe: Subscribe = subscribes[-1]
-        date_format = '%d-%m-%Y %H:%M'
-        current_date = datetime.now().strftime('%d-%m-%Y %H:%M')
-        delta_time = (datetime.strptime(last_subscribe.date_completion, date_format) -
-                      datetime.strptime(current_date, date_format))
-        if delta_time.days >= 0:
-            active_subscribe = True
+        for subscribe in subscribes:
+            # last_subscribe: Subscribe = subscribe
+            date_format = '%d-%m-%Y %H:%M'
+            current_date = datetime.now().strftime('%d-%m-%Y %H:%M')
+            delta_time = (datetime.strptime(subscribe.date_completion, date_format) -
+                          datetime.strptime(current_date, date_format))
+            if delta_time.days >= 0:
+                active_subscribe = True
+                list_active_subscribe.append(subscribe)
     if not subscribes or not active_subscribe:
         list_groups: list = await rq.get_all_group()
         if list_groups:
@@ -282,18 +285,23 @@ async def user_group_for_publish(message: Message, bot: Bot) -> None:
         else:
             await message.answer(text='Пока в бота не добавлены группы, в которых вы могли бы разместить объявления')
     else:
-        last_subscribe: Subscribe = subscribes[-1]
-        info_frame: Frame = await rq.get_frame_id(id_=last_subscribe.frame_id)
-        text = f'Ваш тариф - <b>{info_frame.title_frame}</b>\n' \
-               f'Подписка до: <b>{last_subscribe.date_completion}</b>\n' \
-               f'Ваши группы в которых вы можете размещать заявки:\n'
-        count = 0
-        for group_id in last_subscribe.group_id_list.split(','):
-            if group_id.isdigit():
-                group: Group = await rq.get_group_id(id_=int(group_id))
-                if group:
-                    count += 1
-                    text += f'{count}. {group.title}\n'
+        text = ''
+        str_group_ids = ''
+        for active_subscribe in list_active_subscribe:
+            # last_subscribe: Subscribe = subscribes[-1]
+            info_frame: Frame = await rq.get_frame_id(id_=active_subscribe.frame_id)
+            text += f'Ваш тариф - <b>{info_frame.title_frame}</b>\n' \
+                    f'Подписка до: <b>{active_subscribe.date_completion}</b>\n' \
+                    f'Ваши группы в которых вы можете размещать заявки:\n'
+            count = 0
+            for group_id in active_subscribe.group_id_list.split(','):
+                if group_id.isdigit():
+                    group: Group = await rq.get_group_id(id_=int(group_id))
+                    if group:
+                        count += 1
+                        text += f'{count}. {group.title}\n'
+            str_group_ids += active_subscribe.group_id_list
+        await state.update_data(str_group_ids=str_group_ids)
         await message.answer(text=text,
                              reply_markup=kb.keyboard_manager_publish())
 
@@ -354,14 +362,17 @@ async def process_publish_post(callback: CallbackQuery, state: FSMContext, bot: 
     logging.info(f'process_publish_post: {callback.message.chat.id}')
     subscribes: list[Subscribe] = await rq.get_subscribes_user(tg_id=callback.from_user.id)
     active_subscribe = False
+    list_active_subscribe = []
     if subscribes:
-        last_subscribe: Subscribe = subscribes[-1]
-        date_format = '%d-%m-%Y %H:%M'
-        current_date = datetime.now().strftime('%d-%m-%Y %H:%M')
-        delta_time = (datetime.strptime(last_subscribe.date_completion, date_format) -
-                      datetime.strptime(current_date, date_format))
-        if delta_time.days >= 0:
-            active_subscribe = True
+        for subscribe in subscribes:
+            # last_subscribe: Subscribe = subscribes[-1]
+            date_format = '%d-%m-%Y %H:%M'
+            current_date = datetime.now().strftime('%d-%m-%Y %H:%M')
+            delta_time = (datetime.strptime(subscribe.date_completion, date_format) -
+                          datetime.strptime(current_date, date_format))
+            if delta_time.days >= 0:
+                active_subscribe = True
+                list_active_subscribe.append(subscribe)
     if not subscribes or not active_subscribe:
         list_groups: list = await rq.get_all_group()
         if list_groups:
@@ -372,6 +383,10 @@ async def process_publish_post(callback: CallbackQuery, state: FSMContext, bot: 
             await callback.message.answer(text='Пока в бота не добавлены группы, в которых вы могли бы разместить'
                                                ' объявления')
     else:
+        str_group_ids = ''
+        for active_subscribe in list_active_subscribe:
+            str_group_ids += active_subscribe.group_id_list
+        await state.update_data(str_group_ids=str_group_ids)
         await callback.message.edit_text(text="Пришлите текст заявки для размещения в группах",
                                          reply_markup=None)
         await state.set_state(ManagerState.text_post)
@@ -411,7 +426,8 @@ async def get_location(message: Message, state: FSMContext, bot: Bot):
         return
     await state.update_data(location=message.text)
     data = await state.get_data()
-    await message.answer(text=data['text_post'],
+    preview = 'Предпросмотр поста для публикации:\n\n'
+    await message.answer(text=f"{preview}{data['text_post']}",
                          reply_markup=kb.keyboard_show_post(manager_tg_id=message.chat.id, location=message.text))
     await state.set_state(state=None)
 
@@ -429,7 +445,8 @@ async def process_pass_location(callback: CallbackQuery, state: FSMContext, bot:
     logging.info(f'process_publish_post: {callback.message.chat.id}')
     await state.update_data(location='none')
     data = await state.get_data()
-    await callback.message.edit_text(text=data['text_post'],
+    preview = 'Предпросмотр поста для публикации:\n\n'
+    await callback.message.edit_text(text=f"{preview}{data['text_post']}",
                                      reply_markup=kb.keyboard_show_post_(manager_tg_id=callback.message.chat.id))
     await state.set_state(state=None)
     await callback.answer()
@@ -446,11 +463,27 @@ async def publish_post(callback: CallbackQuery, state: FSMContext, bot: Bot):
     :return:
     """
     logging.info(f'publish_post: {callback.message.chat.id}')
-    subscribes: list[Subscribe] = await rq.get_subscribes_user(tg_id=callback.from_user.id)
-    last_subscribe = subscribes[-1]
-    list_ids_group: list = last_subscribe.group_id_list.split(',')
+    # subscribes: list[Subscribe] = await rq.get_subscribes_user(tg_id=callback.from_user.id)
+    # last_subscribe = subscribes[-1]
+    # list_ids_group: list = last_subscribe.group_id_list.split(',')
     data = await state.get_data()
+    str_group_ids: str = data['str_group_ids']
+    list_ids_group: list = list(set(str_group_ids.split(',')))
     message_chat = []
+    posts = await rq.get_posts()
+    count_posts = len([post for post in posts])
+    post_managers = await rq.get_post_manager(tg_id_manager=callback.from_user.id)
+    count_post_manager = len([post for post in post_managers])
+    info_user: User = await rq.get_user(tg_id=callback.from_user.id)
+    data_reg = info_user.data_reg
+    current_date = datetime.now()
+    data_reg_datetime = datetime(year=int(data_reg.split('-')[-1]),
+                                 month=int(data_reg.split('-')[1]),
+                                 day=int(data_reg.split('-')[0]))
+    count_day = (current_date - data_reg_datetime).days
+    info_autor = f'№ {count_posts} 👉 <a href="tg://user?id={callback.from_user.id}">{callback.from_user.username}</a>\n' \
+                 f'Создано заказов {count_post_manager}\n' \
+                 f'Зарегистрирован {count_day} день назад\n\n'
     for i, group_id in enumerate(list_ids_group):
         group: Group = await rq.get_group_id(id_=group_id)
         if not group:
@@ -463,7 +496,7 @@ async def publish_post(callback: CallbackQuery, state: FSMContext, bot: Bot):
         else:
             if data['location'] == 'none':
                 post = await bot.send_message(chat_id=group.group_id,
-                                              text=f"{data['text_post']}\n"
+                                              text=f"{info_autor}{data['text_post']}\n"
                                                    f"По всем вопросам пишите <a href='tg://user?id="
                                                    f"{callback.from_user.id}'>"
                                                    f"{callback.from_user.username}</a>",
@@ -471,7 +504,7 @@ async def publish_post(callback: CallbackQuery, state: FSMContext, bot: Bot):
                                                   manager_tg_id=callback.message.chat.id))
             else:
                 post = await bot.send_message(chat_id=group.group_id,
-                                              text=f"{data['text_post']}\n"
+                                              text=f"{info_autor}{data['text_post']}\n"
                                                    f"По всем вопросам пишите <a href='tg://user?id="
                                                    f"{callback.from_user.id}'>"
                                                    f"{callback.from_user.username}</a>",

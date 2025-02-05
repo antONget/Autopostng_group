@@ -11,6 +11,8 @@ from config_data.config import Config, load_config
 from utils.error_handling import error_handler
 from filter.admin_filter import check_super_admin
 
+from datetime import datetime
+
 config: Config = load_config()
 router = Router()
 router.message.filter(F.chat.type == "private")
@@ -36,13 +38,17 @@ async def start(message: Message, state: FSMContext, bot: Bot) -> None:
         else:
             username = "Ник отсутствует"
         if await check_super_admin(telegram_id=tg_id):
-            data = {"tg_id": tg_id, "username": username, "role": rq.UserRole.admin}
+            current_date = datetime.now()
+            current_date_str = current_date.strftime('%d-%m-%Y')
+            data = {"tg_id": tg_id, "username": username, "role": rq.UserRole.admin, "data_reg": current_date_str}
             await rq.add_user(tg_id=tg_id, data=data)
             await message.answer(text='Добро пожаловать!\n'
                                       'Вы являетесь администратором проекта',
                                  reply_markup=kb.keyboard_main_admin())
         else:
-            data = {"tg_id": tg_id, "username": username, "role": rq.UserRole.user}
+            current_date = datetime.now()
+            current_date_str = current_date.strftime('%d-%m-%Y')
+            data = {"tg_id": tg_id, "username": username, "role": rq.UserRole.user, "data_reg": current_date_str}
             await rq.add_user(tg_id=tg_id, data=data)
             await message.answer(text='Добро пожаловать!\n',
                                  reply_markup=kb.keyboard_main_manager())

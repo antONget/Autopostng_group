@@ -419,6 +419,16 @@ async def get_post_manager(tg_id_manager: int) -> list[Post]:
         return list_posts
 
 
+async def get_posts() -> list[Post]:
+    """
+    Получаем список постов рпоекта
+    :return:
+    """
+    logging.info(f'get_posts')
+    async with async_session() as session:
+        return await session.scalars(select(Post))
+
+
 async def get_post_id(id_: int) -> Post:
     """
     Получаем пост по id
