@@ -259,6 +259,7 @@ async def user_group_for_publish(message: Message, state: FSMContext, bot: Bot) 
     """
     Менеджер выбирает группу
     :param message:
+    :param state:
     :param bot:
     :return:
     """
@@ -305,49 +306,6 @@ async def user_group_for_publish(message: Message, state: FSMContext, bot: Bot) 
         await message.answer(text=text,
                              reply_markup=kb.keyboard_manager_publish())
 
-    # user = await rq.get_user(tg_id=message.chat.id)
-    # if user.role == rq.UserRole.manager:
-    #     manager: Manager = await rq.get_manager(tg_id_manager=message.chat.id)
-    #     if manager:
-    #         list_ids_group: list[str] = manager.group_ids.split(',')
-    #         if list_ids_group == ['0']:
-    #             await message.answer(text='Вы не добавлены не в одну группу')
-    #         else:
-    #             text = 'Ваши группы в которых вы можете размещать заявки:\n\n'
-    #             i = 0
-    #             for group_id in list_ids_group:
-    #                 group = await rq.get_group_id(id_=int(group_id))
-    #                 if group:
-    #                     i += 1
-    #                     text += f'<b>{i}. {group.title}</b>\n'
-    #             await message.answer(text=text,
-    #                                  reply_markup=kb.keyboard_manager_publish())
-    #     else:
-    #         await message.answer(text='Для публикации постов вам необходимо быть менеджером')
-    # elif user.role == rq.UserRole.partner:
-    #     groups = await rq.get_group_partner(tg_id_partner=message.chat.id)
-    #     # список своих групп
-    #     list_ids_group: list[int] = [group.id for group in groups]
-    #     manager: Manager = await rq.get_manager(tg_id_manager=message.chat.id)
-    #     if manager:
-    #         list_ids_group_manager: list[str] = manager.group_ids.split(',')
-    #         for group_id in list_ids_group_manager:
-    #             if int(group_id) not in list_ids_group:
-    #                 list_ids_group.append(int(group_id))
-    #
-    #     if not list_ids_group or list_ids_group == [0]:
-    #         await message.answer(text='Вы не добавлены не в одну группу')
-    #     else:
-    #         text = 'Ваши группы в которых вы можете размещать заявки:\n\n'
-    #         i = 0
-    #         for group_id in list_ids_group:
-    #             group = await rq.get_group_id(id_=group_id)
-    #             if group:
-    #                 i += 1
-    #                 text += f'<b>{i}. {group.title}</b>\n'
-    #         await message.answer(text=text,
-    #                              reply_markup=kb.keyboard_manager_publish())
-
 
 @router.callback_query(F.data == 'publish_post')
 @error_handler
@@ -365,7 +323,6 @@ async def process_publish_post(callback: CallbackQuery, state: FSMContext, bot: 
     list_active_subscribe = []
     if subscribes:
         for subscribe in subscribes:
-            # last_subscribe: Subscribe = subscribes[-1]
             date_format = '%d-%m-%Y %H:%M'
             current_date = datetime.now().strftime('%d-%m-%Y %H:%M')
             delta_time = (datetime.strptime(subscribe.date_completion, date_format) -
@@ -519,106 +476,6 @@ async def publish_post(callback: CallbackQuery, state: FSMContext, bot: Bot):
     data_ = {'tg_id_manager': callback.message.chat.id, 'posts_text': data['text_post'],
              'posts_chat_message': posts_chat_message, 'post_date': datetime.now().strftime('%d-%m-%Y %H:%M')}
     await rq.add_post(data=data_)
-
-
-
-    # user = await rq.get_user(tg_id=callback.message.chat.id)
-    # if user.role == rq.UserRole.manager:
-    #     manager: Manager = await rq.get_manager(tg_id_manager=callback.message.chat.id)
-    #     if manager:
-    #         list_ids_group: list = manager.group_ids.split(',')
-    #         if list_ids_group == ['0']:
-    #             await callback.message.answer(text='Вы не добавлены не в одну группу')
-    #         else:
-    #             await callback.message.answer(text='Публикация поста по списку групп запущена')
-    #             data = await state.get_data()
-    #             message_chat = []
-    #             for i, group_id in enumerate(list_ids_group):
-    #                 group = await rq.get_group_id(id_=group_id)
-    #                 if not group:
-    #                     continue
-    #                 bot_ = await bot.get_chat_member(group.group_id, bot.id)
-    #                 if bot_.status != ChatMemberStatus.ADMINISTRATOR:
-    #                     await callback.message.answer(text=f'Бот не может опубликовать пост в группу <b>{group.title}</b>'
-    #                                                        f' так как не является администратором, обратитесь к'
-    #                                                        f' <a href="tg://user?id={group.tg_id_partner}">владельцу</a> ')
-    #                 else:
-    #                     if data['location'] == 'none':
-    #                         post = await bot.send_message(chat_id=group.group_id,
-    #                                                       text=f"{data['text_post']}\n"
-    #                                                            f"По всем вопросам пишите <a href='tg://user?id="
-    #                                                            f"{callback.message.chat.id}'>"
-    #                                                            f"{callback.from_user.username}</a>",
-    #                                                       reply_markup=kb.keyboard_post_(
-    #                                                           manager_tg_id=callback.message.chat.id))
-    #                     else:
-    #                         post = await bot.send_message(chat_id=group.group_id,
-    #                                                       text=f"{data['text_post']}\n"
-    #                                                            f"По всем вопросам пишите <a href='tg://user?id="
-    #                                                            f"{callback.message.chat.id}'>"
-    #                                                            f"{callback.from_user.username}</a>",
-    #                                                       reply_markup=kb.keyboard_post(
-    #                                                           manager_tg_id=callback.message.chat.id,
-    #                                                           location=data['location']))
-    #                     message_chat.append(f'{group.group_id}!{post.message_id}')
-    #                     await callback.message.answer(text=f'Бот пост опубликован в группе {group.title}')
-    #             await callback.message.answer(text=f'Публикация поста по списку групп завершена')
-    #             posts_chat_message = ','.join(message_chat)
-    #             data_ = {'tg_id_manager': callback.message.chat.id, 'posts_text': data['text_post'],
-    #                      'posts_chat_message': posts_chat_message, 'post_date': datetime.now().strftime('%d-%m-%Y %H:%M')}
-    #             await rq.add_post(data=data_)
-    #     else:
-    #         await callback.message.answer(text='Для публикации постов вам необходимо быть менеджером')
-    #     await callback.answer()
-    #     return
-    # if user.role == rq.UserRole.partner:
-    #     groups_partner: list = await rq.get_group_partner(tg_id_partner=callback.message.chat.id)
-    #     list_ids_group: list = [group.id for group in groups_partner]
-    #
-    #     manager: Manager = await rq.get_manager(tg_id_manager=callback.message.chat.id)
-    #     if manager:
-    #         list_ids_group_manager: list[str] = manager.group_ids.split(',')
-    #         for group_id in list_ids_group_manager:
-    #             if int(group_id) not in list_ids_group:
-    #                 list_ids_group.append(int(group_id))
-    #
-    #     await callback.message.answer(text='Публикация поста по списку групп запущена')
-    #     data = await state.get_data()
-    #     message_chat = []
-    #     for i, group_id in enumerate(list_ids_group):
-    #         group = await rq.get_group_id(id_=group_id)
-    #         if not group:
-    #             continue
-    #         bot_ = await bot.get_chat_member(group.group_id, bot.id)
-    #         if bot_.status != ChatMemberStatus.ADMINISTRATOR:
-    #             await callback.message.answer(text=f'Бот не может опубликовать пост в группу <b>{group.title}</b>'
-    #                                                f' так как не является администратором, обратитесь к'
-    #                                                f' <a href="tg://user?id={group.tg_id_partner}">владельцу</a> ')
-    #         else:
-    #             if data['location'] == 'none':
-    #                 post = await bot.send_message(chat_id=group.group_id,
-    #                                               text=f"{data['text_post']}\n"
-    #                                                    f"По всем вопросам пишите <a href='tg://user?id="
-    #                                                    f"{callback.message.chat.id}'>"
-    #                                                    f"{callback.from_user.username}</a>",
-    #                                               reply_markup=kb.keyboard_post_(
-    #                                                   manager_tg_id=callback.message.chat.id))
-    #             else:
-    #                 post = await bot.send_message(chat_id=group.group_id,
-    #                                               text=f"{data['text_post']}\n"
-    #                                                    f"По всем вопросам пишите <a href='tg://user?id="
-    #                                                    f"{callback.message.chat.id}'>"
-    #                                                    f"{callback.from_user.username}</a>",
-    #                                               reply_markup=kb.keyboard_post(
-    #                                                   manager_tg_id=callback.message.chat.id,
-    #                                                   location=data['location']))
-    #             message_chat.append(f'{group.group_id}!{post.message_id}')
-    #             await callback.message.answer(text=f'Бот пост опубликован в группе {group.title}')
-    #     await callback.message.answer(text=f'Публикация поста по списку групп завершена')
-    #     posts_chat_message = ','.join(message_chat)
-    #     data_ = {'tg_id_manager': callback.message.chat.id, 'posts_text': data['text_post'],
-    #              'posts_chat_message': posts_chat_message, 'post_date': datetime.now().strftime('%d-%m-%Y %H:%M')}
-    #     await rq.add_post(data=data_)
 
 
 @router.callback_query(F.data == 'cancelpost')
