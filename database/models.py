@@ -74,8 +74,9 @@ class BlackList(Base):
     __tablename__ = 'black_list'
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     tg_id_partner: Mapped[int] = mapped_column(BigInteger)
-    tg_id_user: Mapped[int] = mapped_column(BigInteger)
+    tg_id: Mapped[int] = mapped_column(BigInteger)
     ban_all: Mapped[int] = mapped_column(Integer)
+
 
 async def async_main():
     async with engine.begin() as conn:

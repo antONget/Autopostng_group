@@ -628,14 +628,14 @@ async def get_blacklist_partner(tg_id: int) -> list[BlackList]:
         return black_list_
 
 
-async def get_blacklist_partner(tg_id: int) -> list[BlackList]:
+async def del_blacklist_partner(id_: int) -> None:
     """
-    Получение черного списка партнера
-    :param tg_id:
+    Удаление из черного списка партнера
+    :param id_:
     :return:
     """
     logging.info('get_blacklist_partner')
     async with async_session() as session:
-        black_list = await session.scalars(select(BlackList).where(BlackList.tg_id_partner == tg_id))
-        black_list_ = [user for user in black_list]
-        return black_list_
+        black_list = await session.scalar(select(BlackList).where(BlackList.id == id_))
+        await session.delete(black_list)
+        await session.commit()

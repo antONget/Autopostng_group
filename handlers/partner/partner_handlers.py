@@ -38,7 +38,7 @@ async def press_button_black_list(message: Message, bot: Bot, state: FSMContext)
                          reply_markup=kb.keyboard_select_action_black_list())
 
 
-@router.callback_query(F.data.startswith('blacklist_'))
+@router.callback_query(F.data.startswith('selectactionblacklist_'))
 @error_handler
 async def select_action_black_list(callback: CallbackQuery, state: FSMContext, bot: Bot):
     """
@@ -58,10 +58,10 @@ async def select_action_black_list(callback: CallbackQuery, state: FSMContext, b
         if list_users:
             await callback.message.edit_text(text='Выберите пользователя для добавления его в <b>черный список</b>'
                                                   ' или пришлите его username (например, @manager)',
-                                             reply_markup=kb.keyboards_list_manager(list_manager=list_users,
-                                                                                    block=0))
+                                             reply_markup=await kb.keyboards_black_list(black_list=list_users,
+                                                                                        block=0))
         else:
-            await callback.answer(text='Нет пользователей в БД для добавления в <b>черный список</b>', show_alert=True)
+            await callback.answer(text='Нет пользователей в БД для добавления в черный список', show_alert=True)
     # Удаление пользователя из ЧС
     elif select == 'del':
         await state.update_data(change_manager='del')
@@ -69,10 +69,10 @@ async def select_action_black_list(callback: CallbackQuery, state: FSMContext, b
         if blacklist_partner:
             await callback.message.edit_text(text='Выберите пользователя для удаления его из <b>черного списка</b>'
                                                   ' (например, @manager)',
-                                             reply_markup=kb.keyboards_black_list(black_list=blacklist_partner,
-                                                                                  block=0))
+                                             reply_markup=await kb.keyboards_black_list(black_list=blacklist_partner,
+                                                                                        block=0))
         else:
-            await callback.answer(text='Нет пользователей добавленных в <b>черный список</b>', show_alert=True)
+            await callback.answer(text='Нет пользователей добавленных в черный список', show_alert=True)
     await callback.answer()
     await state.set_state(Partner.manager)
 
@@ -99,8 +99,8 @@ async def process_black_list_forward(callback: CallbackQuery, state: FSMContext,
     num_block = int(callback.data.split('_')[-1]) + 1
     if num_block == count_block:
         num_block = 0
-    keyboard = kb.keyboards_black_list(black_list=list_managers,
-                                       block=num_block)
+    keyboard = await kb.keyboards_black_list(black_list=list_managers,
+                                             block=num_block)
     try:
         await callback.message.edit_text(text='Выберите пользователя для удаления его из <b>черного списка</b>'
                                               ' (например, @manager)',
@@ -134,8 +134,8 @@ async def process_black_list_back(callback: CallbackQuery, state: FSMContext, bo
     num_block = int(callback.data.split('_')[-1]) - 1
     if num_block < 0:
         num_block = count_block - 1
-    keyboard = kb.keyboards_black_list(black_list=list_managers,
-                                       block=num_block)
+    keyboard = await kb.keyboards_black_list(black_list=list_managers,
+                                             block=num_block)
     try:
         await callback.message.edit_text(text='Выберите пользователя для удаления его из <b>черного списка</b>'
                                               ' (например, @manager)',
@@ -161,240 +161,29 @@ async def process_black_list_select(callback: CallbackQuery, state: FSMContext, 
     await state.set_state(state=None)
     id_user = int(callback.data.split('_')[-1])
     user = await rq.get_user_id(id_user=id_user)
-    await state.update_data(manager_tg_id=user.tg_id)
     data = await state.get_data()
     action_black_list = data['action_black_list']
     # Добавление пользователя
     if action_black_list == 'add':
-        await callback.message.answer(text=f'Пользователь <a href="tg://user?id={user.tg_id}">{user.username}</a>'
-                                           f' добавлен в <b>черный список</b>')
+        await callback.message.edit_text(text=f'Пользователь <a href="tg://user?id={user.tg_id}">{user.username}</a>'
+                                              f' добавлен в <b>черный список</b>')
         await bot.send_message(chat_id=user.tg_id,
                                text=f'Партнер <a href="tg://user?id={callback.from_user.id}"> '
                                     f'{callback.from_user.username}</a> добавил вас в <b>черный список</b>, '
                                     f'вы не можете публиковать объявления в его группах')
+        data_black_list = {
+            "tg_id_partner": callback.from_user.id,
+            "tg_id": user.tg_id,
+            "ban_all": 0
+        }
+        await rq.add_user_black_list(data=data_black_list)
 
     else:
-        await callback.message.answer(text=f'Пользователь <a href="tg://user?id={user.tg_id}">{user.username}</a>'
-                                           f' удален из <b>черного списка</b>')
+        await callback.message.edit_text(text=f'Пользователь <a href="tg://user?id={user.tg_id}">{user.username}</a>'
+                                              f' удален из <b>черного списка</b>')
         await bot.send_message(chat_id=user.tg_id,
                                text=f'Партнер <a href="tg://user?id={callback.from_user.id}"> '
                                     f'{callback.from_user.username}</a> исключил вас из <b>черного списка</b>, '
                                     f'теперь вы можете публиковать объявления в его группах')
-    await callback.answer()
-
-
-@router.message(F.text, StateFilter(Partner.manager))
-@error_handler
-async def process_get_manager(message: Message, state: FSMContext, bot: Bot) -> None:
-    """
-    Добавление/удаление менеджера по username
-    :param message:
-    :param state:
-    :param bot:
-    :return:
-    """
-    logging.info(f'process_get_manager: {message.chat.id}')
-    if message.text in ['Группы для публикации', 'Менеджеры', 'Мои группы', 'Партнеры']:
-        await message.answer(text='Добавление менеджера отменено')
-        await state.set_state(state=None)
-        return
-    try:
-        await bot.delete_message(chat_id=message.chat.id,
-                                 message_id=message.message_id-1)
-        username = message.text.split('@')[-1]
-        user = await rq.get_user_username(username=username)
-        # если пользователь найден в БД
-        if user:
-            data = await state.get_data()
-            # получаем действие с менеджером (удалить/добавить)
-            change_manager = data['change_manager']
-            await state.update_data(manager_tg_id=user.tg_id)
-            if change_manager == 'add':
-                # получаем список групп партнера для добавления в них менеджера
-                list_groups: list = await rq.get_group_partner(tg_id_partner=message.chat.id)
-                # если список групп есть то выводим его для выбора
-                if list_groups:
-                    await message.answer(text='Выберите группу для добавления менеджера',
-                                            reply_markup=await kb.keyboards_list_group(list_group=list_groups,
-                                                                                       block=0,
-                                                                                       change_manager='add',
-                                                                                       bot=bot))
-                else:
-                    await message.answer(text='Группы в БД не найдены')
-                await state.set_state(state=None)
-            elif change_manager == 'del':
-                list_groups = await rq.get_group_manager_partner(tg_id_manager=user.tg_id,
-                                                                 tg_id_partner=message.chat.id)
-                if list_groups:
-                    await message.answer(text='Выберите группу для удаления менеджера',
-                                            reply_markup=await kb.keyboards_list_group(list_group=list_groups,
-                                                                                       block=0,
-                                                                                       change_manager='del',
-                                                                                       bot=bot))
-                else:
-                    await message.answer(text='Группы в БД не найдены')
-                await state.set_state(state=None)
-        else:
-            await message.answer(text='Пользователь не найден в БД проверьте введенные данные')
-    except:
-        await message.answer(text='Некорректные данные')
-
-
-# Вперед
-@router.callback_query(F.data.startswith('groupforward_'))
-@error_handler
-async def process_forward_group(callback: CallbackQuery, state: FSMContext, bot: Bot):
-    """
-    Пагинация вперед
-    :param callback: int(callback.data.split('_')[1]) номер блока для вывода
-    :param state:
-    :param bot:
-    :return:
-    """
-    logging.info(f'process_forward_group: {callback.message.chat.id}')
-    data = await state.get_data()
-    change_manager = data['change_manager']
-    if change_manager == 'add':
-        list_groups: list = await rq.get_group_partner(tg_id_partner=callback.message.chat.id)
-    else:
-        list_groups: list = await rq.get_all_group()
-    count_block = len(list_groups) // 6 + 1
-    num_block = int(callback.data.split('_')[-1]) + 1
-    if num_block == count_block:
-        num_block = 0
-    keyboard = await kb.keyboards_list_group(list_group=list_groups,
-                                             block=num_block,
-                                             change_manager='del',
-                                             bot=bot)
-    try:
-        await callback.message.edit_text(text='Выберите группу для удаления менеджера',
-                                         reply_markup=keyboard)
-    except:
-        await callback.message.edit_text(text='Выбeритe группу для удаления менеджера',
-                                         reply_markup=keyboard)
-    await callback.answer()
-
-
-# Назад
-@router.callback_query(F.data.startswith('groupback_'))
-@error_handler
-async def process_forward_back_manager(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
-    """
-    Пагинация назад
-    :param callback: int(callback.data.split('_')[1]) номер блока для вывода
-    :param state:
-    :param bot:
-    :return:
-    """
-    logging.info(f'process_forward_back_manager: {callback.message.chat.id}')
-    data = await state.get_data()
-    change_manager = data['change_manager']
-    if change_manager == 'add':
-        list_groups: list = await rq.get_group_partner(tg_id_partner=callback.message.chat.id)
-    else:
-        list_groups: list = await rq.get_all_group()
-    count_block = len(list_groups) // 6 + 1
-    num_block = int(callback.data.split('_')[-1]) - 1
-    if num_block < 0:
-        num_block = count_block - 1
-    keyboard = await kb.keyboards_list_group(list_group=list_groups,
-                                             block=num_block,
-                                             change_manager='del',
-                                             bot=bot)
-    try:
-        await callback.message.edit_text(text='Выберите группу для удаления менеджера',
-                                         reply_markup=keyboard)
-    except:
-        await callback.message.edit_text(text='Выбeритe группу для удаления менеджера',
-                                         reply_markup=keyboard)
-    await callback.answer()
-
-
-@router.callback_query(F.data.startswith('groupselect_'))
-@error_handler
-async def process_select_group(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
-    """
-    Выбор группы для добавления мнеджера
-    :param callback: int(callback.data.split('_')[1]) номер блока для вывода
-    :param state:
-    :param bot:
-    :return:
-    """
-    logging.info(f'process_select_group: {callback.message.chat.id}')
-    # получаем id группы
-    group_id: str = callback.data.split('_')[-1]
-    data = await state.get_data()
-    manager_tg_id = data['manager_tg_id']
-    data = await state.get_data()
-    change_manager = data['change_manager']
-    user = await rq.get_user(tg_id=manager_tg_id)
-    group = await rq.get_group_id(id_=int(group_id))
-    # Добавляем менеджера в группу
-    if change_manager == 'add':
-        if not user.role == rq.UserRole.partner:
-            await rq.set_role_user(id_user=user.id, role=rq.UserRole.manager)
-        data_ = {"tg_id_manager": user.tg_id, 'group_ids': group_id}
-        await rq.add_manager(tg_id=user.tg_id, data=data_)
-        await callback.message.edit_text(text=f'Менеджер @{user.username} успешно добавлен в группу {group.title}',
-                                         reply_markup=None)
-        try:
-            await bot.send_message(chat_id=user.tg_id,
-                                   text=f'Партнер {callback.from_user.username} добавил вас менеджером в группу {group.title}'
-                                        f'Перезапуститe бота /start при необходимости')
-        except:
-            pass
-    else:
-        await rq.delete_manager(tg_id_manager=user.tg_id, group_id=group_id)
-        await callback.message.edit_text(text=f'Менеджер @{user.username} успешно удален из группы {group.title}',
-                                         reply_markup=None)
-        try:
-            await bot.send_message(chat_id=user.tg_id,
-                                   text=f'Партнер {callback.from_user.username} удалил вас из группы {group.title} как менеджера')
-        except:
-            pass
-    await callback.answer()
-
-
-@router.callback_query(F.data.startswith('groupall'))
-@error_handler
-async def process_select_group(callback: CallbackQuery, state: FSMContext, bot: Bot) -> None:
-    """
-
-    :param callback: int(callback.data.split('_')[1]) номер блока для вывода
-    :param state:
-    :param bot:
-    :return:
-    """
-    logging.info(f'process_select_group: {callback.message.chat.id}')
-    data = await state.get_data()
-    change_manager = data['change_manager']
-    manager_tg_id = data['manager_tg_id']
-    user = await rq.get_user(tg_id=manager_tg_id)
-    if change_manager == 'add':
-        if not user.role == rq.UserRole.partner:
-            await rq.set_role_user(id_user=user.id, role=rq.UserRole.manager)
-        groups_partner = await rq.get_group_partner(tg_id_partner=callback.message.chat.id)
-        list_group_id_partner = [group.id for group in groups_partner]
-        data_ = {"tg_id_manager": user.tg_id, 'group_ids': list_group_id_partner}
-        await rq.add_manager_all_group(tg_id=user.tg_id, data=data_)
-        await callback.message.edit_text(text=f'Менеджер @{user.username} успешно добавлен во все ваши группы',
-                                         reply_markup=None)
-        try:
-            await bot.send_message(chat_id=user.tg_id,
-                                   text=f'Партнер {callback.from_user.username} добавил вас менеджером во все свои группы. '
-                                        f'Перезапуститe бота /start при необходимости')
-        except:
-            pass
-    else:
-        groups_partner = await rq.get_group_partner(tg_id_partner=callback.message.chat.id)
-        list_group_id_partner = [group.id for group in groups_partner]
-        await rq.delete_manager_all_group(tg_id_manager=user.tg_id, group_ids=list_group_id_partner)
-        await callback.message.edit_text(text=f'Менеджер @{user.username} успешно удален из всех ваших группы',
-                                         reply_markup=None)
-        try:
-            await bot.send_message(chat_id=user.tg_id,
-                                   text=f'Партнер {callback.from_user.username} удалил вас как менеджера из всех своих групп. '
-                                        f'Перезапуститe бота /start при необходимости')
-        except:
-            pass
+        await rq.del_blacklist_partner(id_=id_user)
     await callback.answer()
