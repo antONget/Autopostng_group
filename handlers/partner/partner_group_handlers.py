@@ -7,7 +7,7 @@ from aiogram.enums.chat_member_status import ChatMemberStatus
 from aiogram.exceptions import TelegramBadRequest
 from utils.error_handling import error_handler
 from database import requests as rq
-from keyboards import partner_group_keyboards as kb
+from keyboards.partner import partner_group_keyboards as kb
 from filter.admin_filter import IsSuperAdmin
 from filter.user_filter import IsRolePartner
 from config_data.config import Config, load_config
@@ -120,7 +120,7 @@ async def process_get_group_title(message: Message, state: FSMContext, bot: Bot)
     """
     logging.info(f'process_get_group_title: {message.chat.id}')
     group_title = message.text
-    if group_title in ['Группы для публикации', 'Менеджеры', 'Мои группы', 'Партнеры']:
+    if group_title in ['Опубликовать пост', 'Менеджеры', 'Мои группы', 'Партнеры']:
         await message.answer(text='Добавление группы отменено')
         await state.set_state(state=None)
         return

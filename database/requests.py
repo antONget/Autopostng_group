@@ -319,6 +319,18 @@ async def get_group_partner(tg_id_partner: int) -> list[Group]:
         return list_groups
 
 
+async def get_group_partner_not(tg_id_partner: int) -> list[Group]:
+    """
+    Получаем список групп не добавленных партнеров
+    :return:
+    """
+    logging.info(f'get_group_partner')
+    async with async_session() as session:
+        groups = await session.scalars(select(Group).where(Group.tg_id_partner != tg_id_partner))
+        list_groups = [group for group in groups]
+        return list_groups
+
+
 async def get_group_id(id_: int) -> Group:
     """
     Получаем группу

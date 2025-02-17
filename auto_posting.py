@@ -10,8 +10,12 @@ from aiogram.types import ErrorEvent
 import traceback
 from typing import Any, Dict
 from config_data.config import Config, load_config
-from handlers import other_handlers, user_handlers, ban, unban, admin_handlers, partner_group_handlers, manager_handlers, partner_frames_handlers, partner_requisites_handlers
-from handlers.partner import partner_handlers
+from handlers.admin import admin_handlers, ban, unban
+from handlers.partner import partner_handlers, partner_requisites_handlers, partner_group_handlers, \
+    partner_frames_handlers
+from handlers.user import user_subscribe_frame_handlers, user_posting_handlers
+from handlers import start_handlers, other_handlers
+
 from database.models import async_main
 from notify_admins import on_startup_notify
 # Инициализируем logger
@@ -40,14 +44,14 @@ async def main():
     dp = Dispatcher()
     await on_startup_notify(bot=bot)
     # Регистрируем router в диспетчере
-    dp.include_router(user_handlers.router)
-    dp.include_router(admin_handlers.router)
-    dp.include_router(partner_handlers.router)
-    dp.include_router(partner_group_handlers.router)
-    dp.include_router(partner_frames_handlers.router)
-    dp.include_router(partner_requisites_handlers.router)
-    dp.include_router(manager_handlers.router)
-    dp.include_routers(ban.router, unban.router)
+    dp.include_router(start_handlers.router)
+    dp.include_routers(admin_handlers.router, ban.router, unban.router)
+    dp.include_routers(partner_handlers.router,
+                       partner_requisites_handlers.router,
+                       partner_group_handlers.router,
+                       partner_frames_handlers.router)
+    dp.include_routers(user_subscribe_frame_handlers.router,
+                       user_posting_handlers.router)
     dp.include_router(other_handlers.router)
 
     @dp.error()

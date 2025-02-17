@@ -7,7 +7,7 @@ from aiogram.filters import StateFilter
 from utils.error_handling import error_handler
 from database import requests as rq
 from database.models import User
-from keyboards import admin_keyboards as kb
+from keyboards.admin import admin_keyboards as kb
 from filter.admin_filter import IsSuperAdmin
 from config_data.config import Config, load_config
 import logging
@@ -178,7 +178,7 @@ async def process_get_partner(message: Message, state: FSMContext, bot: Bot) -> 
     :return:
     """
     logging.info(f'process_get_partner: {message.chat.id}')
-    if message.text in ['Группы для публикации', 'Менеджеры', 'Мои группы', 'Партнеры']:
+    if message.text in ['Опубликовать пост', 'Менеджеры', 'Мои группы', 'Партнеры']:
         await message.answer(text='Добавление администратора отменено')
         await state.set_state(state=None)
         return

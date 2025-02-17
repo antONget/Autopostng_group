@@ -1,10 +1,12 @@
-from filter.filter_group import parse_time, is_admin
 from aiogram.types import Message, ChatPermissions
 from aiogram.filters import Command, CommandObject
 from aiogram import Bot, Router, F
 
+from filter.filter_group import parse_time, is_admin
+from filter.admin_filter import IsSuperAdmin
+
 router = Router()
-router.message.filter(F.chat.type != "private")
+router.message.filter(F.chat.type != "private", IsSuperAdmin())
 
 
 @router.message(Command("unban"))

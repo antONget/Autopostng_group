@@ -3,13 +3,11 @@ from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.filters import StateFilter, or_f
-from aiogram.enums.chat_member_status import ChatMemberStatus
-from aiogram.exceptions import TelegramBadRequest
 
 from utils.error_handling import error_handler
 from database import requests as rq
-from database.models import Frame, Group, User
-from keyboards import partner_requisites_keyboards as kb
+from database.models import User
+from keyboards.partner import partner_requisites_keyboards as kb
 from filter.admin_filter import IsSuperAdmin
 from filter.user_filter import IsRolePartner
 from config_data.config import Config, load_config
