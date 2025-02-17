@@ -611,8 +611,10 @@ async def add_user_black_list(data: dict) -> None:
     """
     logging.info(f'add_subscribe')
     async with async_session() as session:
-        session.add(BlackList(**data))
-        await session.commit()
+        black_list = await session.scalar(select(BlackList).where(BlackList.tg_id_partner == data['tg_id_partner']))
+        if not black_list:
+            session.add(BlackList(**data))
+            await session.commit()
 
 
 async def get_blacklist_partner(tg_id: int) -> list[BlackList]:
