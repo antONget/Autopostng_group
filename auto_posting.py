@@ -10,8 +10,8 @@ from aiogram.types import ErrorEvent
 import traceback
 from typing import Any, Dict
 from config_data.config import Config, load_config
-from handlers import other_handlers, user_handlers, ban, unban, admin_handlers, partner_handlers,\
-    partner_group_handlers, manager_handlers, partner_frames_handlers, partner_requisites_handlers
+from handlers import other_handlers, user_handlers, ban, unban, admin_handlers, partner_group_handlers, manager_handlers, partner_frames_handlers, partner_requisites_handlers
+from handlers.partner import partner_handlers
 from database.models import async_main
 from notify_admins import on_startup_notify
 # Инициализируем logger

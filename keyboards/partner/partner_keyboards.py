@@ -6,33 +6,33 @@ from filter.filter_group import is_admin_bot_in_group
 import logging
 
 
-def keyboard_change_list_manager() -> InlineKeyboardMarkup:
-    logging.info("keyboard_start_menu")
-    button_1 = InlineKeyboardButton(text='Добавить менеджера',  callback_data=f'manager_add')
-    button_2 = InlineKeyboardButton(text='Удалить менеджера', callback_data=f'manager_del')
+def keyboard_select_action_black_list() -> InlineKeyboardMarkup:
+    logging.info("keyboard_select_action_black_list")
+    button_1 = InlineKeyboardButton(text='Добавить в черный список',  callback_data=f'blacklist_add')
+    button_2 = InlineKeyboardButton(text='Удалить из черного списка', callback_data=f'blacklist_del')
     keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]])
     return keyboard
 
 
-def keyboards_list_manager(list_manager: list, block: int):
+def keyboards_black_list(black_list: list, block: int):
     """
-    Клавиатура для вывода списка менеджера
-    :param list_manager:
+    Клавиатура для вывода списка пользователей добавленных в черный список
+    :param black_list:
     :param block:
     :return:
     """
-    logging.info(f"keyboards_list_manager {len(list_manager)}, {block}")
+    logging.info(f"keyboards_black_list {len(black_list)}, {block}")
     kb_builder = InlineKeyboardBuilder()
     buttons = []
-    for manager in list_manager[block*6:(block+1)*6]:
+    for manager in black_list[block*6:(block+1)*6]:
         if manager.role == rq.UserRole.admin:
             continue
         buttons.append(InlineKeyboardButton(text=manager.username,
-                                            callback_data=f'managerselect_{manager.id}'))
+                                            callback_data=f'blacklistselect_{manager.id}'))
     button_back = InlineKeyboardButton(text='Назад',
-                                       callback_data=f'managerback_{block}')
+                                       callback_data=f'blacklistback_{block}')
     button_next = InlineKeyboardButton(text='Вперед',
-                                       callback_data=f'managerforward_{block}')
+                                       callback_data=f'blacklistforward_{block}')
     button_page = InlineKeyboardButton(text=f'{block+1}',
                                        callback_data=f'none')
     kb_builder.row(*buttons, width=1)

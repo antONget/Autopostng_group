@@ -1,4 +1,4 @@
-from database.models import User, Manager, Group, Post, Frame, Subscribe
+from database.models import User, Manager, Group, Post, Frame, Subscribe, BlackList
 from database.models import async_session
 from sqlalchemy import select
 from dataclasses import dataclass
@@ -598,3 +598,44 @@ async def get_subscribes_user(tg_id: int) -> list[Subscribe]:
         subscribes = await session.scalars(select(Subscribe).where(Subscribe.tg_id == tg_id))
         list_subscribes = [subscribe for subscribe in subscribes]
         return list_subscribes
+
+
+""" BLACK_LIST """
+
+
+async def add_user_black_list(data: dict) -> None:
+    """
+    Добавление пользователя в черный список
+    :param data:
+    :return:
+    """
+    logging.info(f'add_subscribe')
+    async with async_session() as session:
+        session.add(BlackList(**data))
+        await session.commit()
+
+
+async def get_blacklist_partner(tg_id: int) -> list[BlackList]:
+    """
+    Получение черного списка партнера
+    :param tg_id:
+    :return:
+    """
+    logging.info('get_blacklist_partner')
+    async with async_session() as session:
+        black_list = await session.scalars(select(BlackList).where(BlackList.tg_id_partner == tg_id))
+        black_list_ = [user for user in black_list]
+        return black_list_
+
+
+async def get_blacklist_partner(tg_id: int) -> list[BlackList]:
+    """
+    Получение черного списка партнера
+    :param tg_id:
+    :return:
+    """
+    logging.info('get_blacklist_partner')
+    async with async_session() as session:
+        black_list = await session.scalars(select(BlackList).where(BlackList.tg_id_partner == tg_id))
+        black_list_ = [user for user in black_list]
+        return black_list_
