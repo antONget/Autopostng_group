@@ -171,7 +171,7 @@ async def process_get_check(callback: CallbackQuery, state: FSMContext, bot: Bot
     :return:
     """
     logging.info(f'process_get_check: {callback.message.chat.id}')
-    await callback.message.answer(text='Отправьте чек об оплате')
+    await callback.message.edit_text(text='Отправьте чек об оплате')
     await state.update_data(id_frame=callback.data.split('_')[-1])
     await state.set_state(ManagerState.check_pay)
     await callback.answer()
@@ -216,6 +216,7 @@ async def process_confirm_cancel_payment(callback: CallbackQuery, state: FSMCont
     user_tg_id: str = callback.data.split('_')[-2]
     id_frame: str = callback.data.split('_')[-1]
     info_frame: Frame = await rq.get_frame_id(id_=int(id_frame))
+    await callback.message.edit_reply_markup(reply_markup=None)
     if payment == 'cancel':
         await callback.message.answer(text='Платеж отклонен')
         await bot.send_message(chat_id=user_tg_id,

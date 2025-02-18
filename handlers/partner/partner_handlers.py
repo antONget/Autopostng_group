@@ -188,7 +188,7 @@ async def process_black_list_select(callback: CallbackQuery, state: FSMContext, 
     action_black_list = data['action_black_list']
     # Добавление пользователя
     if action_black_list == 'add':
-        if data['BL']:
+        if data.get('BL', 0):
             await callback.message.edit_text(text=f'Пользователь <a href="tg://user?id={user.tg_id}">{user.username}</a>'
                                                   f' добавлен в <b>черный список</b> во всех группах бота')
             await bot.send_message(chat_id=user.tg_id,
@@ -206,12 +206,12 @@ async def process_black_list_select(callback: CallbackQuery, state: FSMContext, 
         data_black_list = {
             "tg_id_partner": callback.from_user.id,
             "tg_id": user.tg_id,
-            "ban_all": data['BL']
+            "ban_all": data.get('BL', 0)
         }
         await rq.add_user_black_list(data=data_black_list)
 
     else:
-        if data['BL']:
+        if data.get('BL', 0):
             await callback.message.edit_text(
                 text=f'Пользователь <a href="tg://user?id={user.tg_id}">{user.username}</a>'
                      f' удален из <b>черного списка</b> бота')
@@ -228,5 +228,5 @@ async def process_black_list_select(callback: CallbackQuery, state: FSMContext, 
                                         f'теперь вы можете публиковать объявления в его группах')
         await rq.del_blacklist_partner(tg_partner=callback.from_user.id,
                                        tg_user=user.tg_id,
-                                       ban_all=data['BL'])
+                                       ban_all=data.get('BL', 0))
     await callback.answer()

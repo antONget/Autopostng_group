@@ -663,8 +663,8 @@ async def get_blacklist_group_all(tg_id: int) -> bool:
     """
     logging.info('get_blacklist_group_all')
     async with async_session() as session:
-        black_list_all = await session.scalar(select(BlackList).frilter(BlackList.tg_id == tg_id,
-                                                                        BlackList.ban_all == 1))
+        black_list_all = await session.scalar(select(BlackList).filter(BlackList.tg_id == tg_id,
+                                                                       BlackList.ban_all == 1))
         if black_list_all:
             return True
         else:
@@ -680,8 +680,8 @@ async def get_blacklist_group(tg_id_partner: int, tg_id: int) -> bool:
     """
     logging.info('get_blacklist_group')
     async with async_session() as session:
-        black_list_all = await session.scalar(select(BlackList).frilter(BlackList.tg_id == tg_id,
-                                                                        BlackList.tg_id_partner == tg_id_partner))
+        black_list_all = await session.scalar(select(BlackList).filter(BlackList.tg_id == tg_id,
+                                                                       BlackList.tg_id_partner == tg_id_partner))
         if black_list_all:
             return True
         else:

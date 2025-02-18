@@ -58,6 +58,9 @@ async def user_group_for_publish(message: Message, state: FSMContext, bot: Bot) 
         text = ''
         str_group_ids = ''
         for active_subscribe in list_active_subscribe:
+            if await rq.get_blacklist_group_all(tg_id=message.from_user.id):
+                await message.answer(text='Вы заблокированы во всех группа бота, кроме своих')
+                break
             info_frame: Frame = await rq.get_frame_id(id_=active_subscribe.frame_id)
             text += f'Ваш тариф - <b>{info_frame.title_frame}</b>\n' \
                     f'Подписка до: <b>{active_subscribe.date_completion}</b>\n' \
@@ -68,13 +71,21 @@ async def user_group_for_publish(message: Message, state: FSMContext, bot: Bot) 
                     group: Group = await rq.get_group_id(id_=int(group_id))
                     if group:
                         count += 1
-                        text += f'{count}. {group.title}\n'
-            str_group_ids += active_subscribe.group_id_list
+                        if await rq.get_blacklist_group(tg_id_partner=group.tg_id_partner,
+                                                        tg_id=message.from_user.id):
+                            text += f'{count}. <b>{group.title}</b> ❌\n'
+                        else:
+                            text += f'{count}. <b>{group.title}</b>\n'
+            if not await rq.get_blacklist_group(tg_id_partner=info_frame.tg_id_creator,
+                                                tg_id=message.from_user.id):
+                str_group_ids += active_subscribe.group_id_list
         groups_partner: list[Group] = await rq.get_group_partner(tg_id_partner=message.from_user.id)
         self_group_text = f'Группы в которых вы можете размещать заявки:\n'
+        count = 0
         for group in groups_partner:
+            count += 1
             str_group_ids += f',{group.id}'
-            self_group_text += f'{group.title}\n'
+            self_group_text += f'{count}. <b>{group.title}</b>\n'
         await state.update_data(str_group_ids=str_group_ids)
         await message.answer(text=f'{text}\n\n{self_group_text}',
                              reply_markup=kb.keyboard_user_publish())
@@ -91,7 +102,9 @@ async def user_group_for_publish(message: Message, state: FSMContext, bot: Bot) 
             text = ''
             str_group_ids = ''
             for active_subscribe in list_active_subscribe:
-                # last_subscribe: Subscribe = subscribes[-1]
+                if await rq.get_blacklist_group_all(tg_id=message.from_user.id):
+                    await message.answer(text='Вы заблокированы во всех группа бота, кроме своих')
+                    break
                 info_frame: Frame = await rq.get_frame_id(id_=active_subscribe.frame_id)
                 text += f'Ваш тариф - <b>{info_frame.title_frame}</b>\n' \
                         f'Подписка до: <b>{active_subscribe.date_completion}</b>\n' \
@@ -102,8 +115,18 @@ async def user_group_for_publish(message: Message, state: FSMContext, bot: Bot) 
                         group: Group = await rq.get_group_id(id_=int(group_id))
                         if group:
                             count += 1
-                            text += f'{count}. {group.title}\n'
-                str_group_ids += active_subscribe.group_id_list
+                            if await rq.get_blacklist_group(tg_id_partner=group.tg_id_partner,
+                                                            tg_id=message.from_user.id):
+                                text += f'{count}. <b>{group.title}</b> ❌\n'
+                            else:
+                                text += f'{count}. <b>{group.title}</b>\n'
+                text += '\n'
+                if not await rq.get_blacklist_group(tg_id_partner=info_frame.tg_id_creator,
+                                                    tg_id=message.from_user.id):
+                    str_group_ids += active_subscribe.group_id_list
+            if not str_group_ids:
+                await message.answer(text=f'{text}\n\nУ вас нет доступных групп для публикаций')
+                return
             await state.update_data(str_group_ids=str_group_ids)
             await message.answer(text=text,
                                  reply_markup=kb.keyboard_user_publish())

@@ -52,8 +52,8 @@ async def select_change_group(callback: CallbackQuery, state: FSMContext, bot: B
     if select == 'add':
         await callback.message.edit_text(text='Пришлите id группы, обязательно добавьте бота в качестве'
                                               ' администратора (Чтобы получить ID чата добавьте бота @FIND_MY_ID_BOT'
-                                              ' в чат и напишите в команду'
-                                              ' /id@FIND_MY_ID_BOT',
+                                              ' в чат и напишите в команду /id@FIND_MY_ID_BOT или воспользуйтесь '
+                                              'ботом @username_to_id_bot',
                                          reply_markup=None)
         await state.set_state(Partner.group_id)
         await callback.answer()
