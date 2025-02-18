@@ -58,7 +58,6 @@ async def user_group_for_publish(message: Message, state: FSMContext, bot: Bot) 
         text = ''
         str_group_ids = ''
         for active_subscribe in list_active_subscribe:
-            # last_subscribe: Subscribe = subscribes[-1]
             info_frame: Frame = await rq.get_frame_id(id_=active_subscribe.frame_id)
             text += f'Ваш тариф - <b>{info_frame.title_frame}</b>\n' \
                     f'Подписка до: <b>{active_subscribe.date_completion}</b>\n' \

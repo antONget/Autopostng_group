@@ -66,6 +66,17 @@ async def get_list_users() -> list:
         return [[user.tg_id, user.username] for user in users]
 
 
+async def get_list_user_role(role: str = UserRole.user) -> list[User]:
+    """
+    ПОЛЬЗОВАТЕЛЬ - список пользователей верифицированных в боте
+    :return:
+    """
+    logging.info(f'get_list_users')
+    async with async_session() as session:
+        users = await session.scalars(select(User).where(User.role == role))
+        return [user for user in users]
+
+
 async def get_all_partner() -> list[User]:
     """
     Получаем список всех пользователей зарегистрированных в боте
@@ -623,7 +634,9 @@ async def add_user_black_list(data: dict) -> None:
     """
     logging.info(f'add_subscribe')
     async with async_session() as session:
-        black_list = await session.scalar(select(BlackList).where(BlackList.tg_id_partner == data['tg_id_partner']))
+        black_list = await session.scalar(select(BlackList).filter(BlackList.tg_id == data['tg_id'],
+                                                                   BlackList.tg_id_partner == data['tg_id_partner'],
+                                                                   BlackList.ban_all == data['ban_all']))
         if not black_list:
             session.add(BlackList(**data))
             await session.commit()
@@ -642,14 +655,52 @@ async def get_blacklist_partner(tg_id: int) -> list[BlackList]:
         return black_list_
 
 
-async def del_blacklist_partner(id_: int) -> None:
+async def get_blacklist_group_all(tg_id: int) -> bool:
     """
-    Удаление из черного списка партнера
-    :param id_:
+    Проверка, что пользователь заблокирован во всех группах бота
+    :param tg_id:
     :return:
     """
-    logging.info('get_blacklist_partner')
+    logging.info('get_blacklist_group_all')
     async with async_session() as session:
-        black_list = await session.scalar(select(BlackList).where(BlackList.id == id_))
-        await session.delete(black_list)
-        await session.commit()
+        black_list_all = await session.scalar(select(BlackList).frilter(BlackList.tg_id == tg_id,
+                                                                        BlackList.ban_all == 1))
+        if black_list_all:
+            return True
+        else:
+            return False
+
+
+async def get_blacklist_group(tg_id_partner: int, tg_id: int) -> bool:
+    """
+    Проверка, что пользователь заблокирован в группах партнера
+    :param tg_id_partner:
+    :param tg_id:
+    :return:
+    """
+    logging.info('get_blacklist_group')
+    async with async_session() as session:
+        black_list_all = await session.scalar(select(BlackList).frilter(BlackList.tg_id == tg_id,
+                                                                        BlackList.tg_id_partner == tg_id_partner))
+        if black_list_all:
+            return True
+        else:
+            return False
+
+
+async def del_blacklist_partner(tg_partner: int, tg_user: int, ban_all: str) -> None:
+    """
+    Удаление из черного списка партнера
+    :param tg_partner:
+    :param tg_user:
+    :param ban_all:
+    :return:
+    """
+    logging.info(f'get_blacklist_partner {tg_partner} {tg_user} {ban_all}')
+    async with async_session() as session:
+        black_list = await session.scalar(select(BlackList).filter(BlackList.tg_id_partner == tg_partner,
+                                                                   BlackList.tg_id == tg_user,
+                                                                   BlackList.ban_all == ban_all))
+        if black_list:
+            await session.delete(black_list)
+            await session.commit()

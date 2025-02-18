@@ -6,9 +6,10 @@ from aiogram.filters import StateFilter, or_f
 
 from utils.error_handling import error_handler
 from database import requests as rq
+from database.models import User
 from keyboards.partner import partner_keyboards as kb
 from filter.admin_filter import IsSuperAdmin
-from filter.user_filter import IsRolePartner
+from filter.user_filter import IsRolePartner, check_role
 from config_data.config import Config, load_config
 import logging
 
@@ -34,8 +35,30 @@ async def press_button_black_list(message: Message, bot: Bot, state: FSMContext)
     """
     logging.info('press_button_black_list')
     await state.set_state(state=None)
-    await message.answer(text='Выберите действие для черного списка',
-                         reply_markup=kb.keyboard_select_action_black_list())
+    if await check_role(tg_id=message.from_user.id,
+                        role=rq.UserRole.partner):
+        await message.answer(text='Выберите действие для черного списка',
+                             reply_markup=kb.keyboard_select_action_black_list())
+    else:
+        await message.answer(text='Выберите действие для черного списка',
+                             reply_markup=kb.keyboard_select_action_black_list_admin())
+
+
+@router.callback_query(F.data.startswith('BL_'))
+@error_handler
+async def select_action_black_list_admin(callback: CallbackQuery, state: FSMContext, bot: Bot):
+    """
+    Действие для черного списка
+    :param callback:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info('select_action_black_list_admin')
+    BL = int(callback.data.split('_')[-1])
+    await state.update_data(BL=BL)
+    await callback.message.edit_text(text='Выберите действие для черного списка',
+                                     reply_markup=kb.keyboard_select_action_black_list())
 
 
 @router.callback_query(F.data.startswith('selectactionblacklist_'))
@@ -53,7 +76,7 @@ async def select_action_black_list(callback: CallbackQuery, state: FSMContext, b
     await state.update_data(action_black_list=select)
     # Добавление пользователя в ЧС
     if select == 'add':
-        list_users: list = await rq.get_all_users()
+        list_users: list = await rq.get_list_user_role()
         await state.update_data(change_manager='add')
         if list_users:
             await callback.message.edit_text(text='Выберите пользователя для добавления его в <b>черный список</b>'
@@ -92,7 +115,7 @@ async def process_black_list_forward(callback: CallbackQuery, state: FSMContext,
     data = await state.get_data()
     action_black_list = data['action_black_list']
     if action_black_list == 'add':
-        list_managers = await rq.get_all_users()
+        list_managers = await rq.get_list_user_role()
     else:
         list_managers = await rq.get_blacklist_partner(tg_id=callback.from_user.id)
     count_block = len(list_managers) // 6 + 1
@@ -127,7 +150,7 @@ async def process_black_list_back(callback: CallbackQuery, state: FSMContext, bo
     data = await state.get_data()
     action_black_list = data['action_black_list']
     if action_black_list == 'add':
-        list_managers = await rq.get_all_users()
+        list_managers = await rq.get_list_user_role()
     else:
         list_managers = await rq.get_blacklist_partner(tg_id=callback.from_user.id)
     count_block = len(list_managers) // 6 + 1
@@ -160,30 +183,50 @@ async def process_black_list_select(callback: CallbackQuery, state: FSMContext, 
     logging.info(f'process_black_list_select: {callback.message.chat.id}')
     await state.set_state(state=None)
     id_user = int(callback.data.split('_')[-1])
-    user = await rq.get_user_id(id_user=id_user)
+    user: User = await rq.get_user_id(id_user=id_user)
     data = await state.get_data()
     action_black_list = data['action_black_list']
     # Добавление пользователя
     if action_black_list == 'add':
-        await callback.message.edit_text(text=f'Пользователь <a href="tg://user?id={user.tg_id}">{user.username}</a>'
-                                              f' добавлен в <b>черный список</b>')
-        await bot.send_message(chat_id=user.tg_id,
-                               text=f'Партнер <a href="tg://user?id={callback.from_user.id}"> '
-                                    f'{callback.from_user.username}</a> добавил вас в <b>черный список</b>, '
-                                    f'вы не можете публиковать объявления в его группах')
+        if data['BL']:
+            await callback.message.edit_text(text=f'Пользователь <a href="tg://user?id={user.tg_id}">{user.username}</a>'
+                                                  f' добавлен в <b>черный список</b> во всех группах бота')
+            await bot.send_message(chat_id=user.tg_id,
+                                   text=f'Администратор <a href="tg://user?id={callback.from_user.id}"> '
+                                        f'{callback.from_user.username}</a> добавил вас в <b>черный список</b>, '
+                                        f'вы не можете публиковать объявления в боте')
+        else:
+            await callback.message.edit_text(text=f'Пользователь <a href="tg://user?id={user.tg_id}">{user.username}</a>'
+                                                  f' добавлен в <b>черный список</b>')
+            await bot.send_message(chat_id=user.tg_id,
+                                   text=f'Партнер <a href="tg://user?id={callback.from_user.id}"> '
+                                        f'{callback.from_user.username}</a> добавил вас в <b>черный список</b>, '
+                                        f'вы не можете публиковать объявления в его группах')
+
         data_black_list = {
             "tg_id_partner": callback.from_user.id,
             "tg_id": user.tg_id,
-            "ban_all": 0
+            "ban_all": data['BL']
         }
         await rq.add_user_black_list(data=data_black_list)
 
     else:
-        await callback.message.edit_text(text=f'Пользователь <a href="tg://user?id={user.tg_id}">{user.username}</a>'
-                                              f' удален из <b>черного списка</b>')
-        await bot.send_message(chat_id=user.tg_id,
-                               text=f'Партнер <a href="tg://user?id={callback.from_user.id}"> '
-                                    f'{callback.from_user.username}</a> исключил вас из <b>черного списка</b>, '
-                                    f'теперь вы можете публиковать объявления в его группах')
-        await rq.del_blacklist_partner(id_=id_user)
+        if data['BL']:
+            await callback.message.edit_text(
+                text=f'Пользователь <a href="tg://user?id={user.tg_id}">{user.username}</a>'
+                     f' удален из <b>черного списка</b> бота')
+            await bot.send_message(chat_id=user.tg_id,
+                                   text=f'Администратор <a href="tg://user?id={callback.from_user.id}"> '
+                                        f'{callback.from_user.username}</a> исключил вас из <b>черного списка</b>, '
+                                        f'теперь вы можете публиковать объявления во всех группах бота')
+        else:
+            await callback.message.edit_text(text=f'Пользователь <a href="tg://user?id={user.tg_id}">{user.username}</a>'
+                                                  f' удален из <b>черного списка</b>')
+            await bot.send_message(chat_id=user.tg_id,
+                                   text=f'Партнер <a href="tg://user?id={callback.from_user.id}"> '
+                                        f'{callback.from_user.username}</a> исключил вас из <b>черного списка</b>, '
+                                        f'теперь вы можете публиковать объявления в его группах')
+        await rq.del_blacklist_partner(tg_partner=callback.from_user.id,
+                                       tg_user=user.tg_id,
+                                       ban_all=data['BL'])
     await callback.answer()

@@ -7,6 +7,14 @@ from filter.filter_group import is_admin_bot_in_group
 import logging
 
 
+def keyboard_select_action_black_list_admin() -> InlineKeyboardMarkup:
+    logging.info("keyboard_select_action_black_list")
+    button_1 = InlineKeyboardButton(text='ЧС в своих группах',  callback_data=f'BL_0')
+    button_2 = InlineKeyboardButton(text='ЧС во всех группах бота', callback_data=f'BL_1')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]])
+    return keyboard
+
+
 def keyboard_select_action_black_list() -> InlineKeyboardMarkup:
     logging.info("keyboard_select_action_black_list")
     button_1 = InlineKeyboardButton(text='Добавить в черный список',  callback_data=f'selectactionblacklist_add')
@@ -28,7 +36,7 @@ async def keyboards_black_list(black_list: list, block: int):
     for user in black_list[block*6:(block+1)*6]:
         user_info: User = await rq.get_user(tg_id=user.tg_id)
         buttons.append(InlineKeyboardButton(text=user_info.username,
-                                            callback_data=f'blacklistselect_{user.id}'))
+                                            callback_data=f'blacklistselect_{user_info.id}'))
     button_back = InlineKeyboardButton(text='Назад',
                                        callback_data=f'blacklistback_{block}')
     button_next = InlineKeyboardButton(text='Вперед',
