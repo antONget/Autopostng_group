@@ -45,8 +45,14 @@ class Post(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     tg_id_manager = mapped_column(Integer)
     posts_text: Mapped[str] = mapped_column(String())
-    posts_chat_message: Mapped[str] = mapped_column(String())
-    post_date: Mapped[str] = mapped_column(String())
+    post_location: Mapped[str] = mapped_column(String())
+    post_date_create: Mapped[str] = mapped_column(String())
+    status: Mapped[str] = mapped_column(String())
+    posts_chat_message: Mapped[str] = mapped_column(String(), default='')
+    post_date_publish: Mapped[str] = mapped_column(String(), default='')
+    post_autopost_1: Mapped[str] = mapped_column(String(), default='')
+    post_autopost_2: Mapped[str] = mapped_column(String(), default='')
+    post_autopost_3: Mapped[str] = mapped_column(String(), default='')
 
 
 class Frame(Base):

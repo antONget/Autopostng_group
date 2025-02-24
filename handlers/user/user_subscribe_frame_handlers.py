@@ -112,6 +112,13 @@ async def process_select_group(callback: CallbackQuery, state: FSMContext, bot: 
     frames: list[Frame] = await rq.get_frames()
     group_in_frame: list[Frame] = []
     info_group: Group = await rq.get_group_id(id_=group_id)
+    black_list_user = await rq.get_blacklist_group(tg_id_partner=info_group.tg_id_partner,
+                                                   tg_id=callback.from_user.id)
+    if black_list_user:
+        await callback.message.edit_text(text=f'Вы не можете приобрести подписку,'
+                                              f' так <a href="tg://user?id={info_group.tg_id_partner}">владелец</a>'
+                                              f' заблокировал вас в своих группах')
+        return
     text = f'Для публикации в группу {info_group.title} выберите тариф:\n'
     num = 0
     for frame in frames:

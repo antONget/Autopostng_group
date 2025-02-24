@@ -13,11 +13,13 @@ from config_data.config import Config, load_config
 from handlers.admin import admin_handlers, ban, unban
 from handlers.partner import partner_handlers, partner_requisites_handlers, partner_group_handlers, \
     partner_frames_handlers
-from handlers.user import user_subscribe_frame_handlers, user_posting_handlers
+from handlers.user import user_subscribe_frame_handlers, user_posting_handlers, \
+    user_post_delete_handlers, user_post_edit_handlers
 from handlers import start_handlers, other_handlers
-
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from database.models import async_main
 from notify_admins import on_startup_notify
+from utils.scheduler_task_posting import scheduler_send_post_for_group
 # Инициализируем logger
 logger = logging.getLogger(__name__)
 
@@ -42,6 +44,9 @@ async def main():
     # Инициализируем бот и диспетчер
     bot = Bot(token=config.tg_bot.token, default=DefaultBotProperties(parse_mode=ParseMode.HTML))
     dp = Dispatcher()
+    scheduler = AsyncIOScheduler(timezone="Europe/Moscow")
+    scheduler.add_job(func=scheduler_send_post_for_group, trigger='cron', minute='*', args=(bot,))
+    scheduler.start()
     await on_startup_notify(bot=bot)
     # Регистрируем router в диспетчере
     dp.include_router(start_handlers.router)
@@ -51,9 +56,11 @@ async def main():
                        partner_group_handlers.router,
                        partner_frames_handlers.router)
     dp.include_routers(user_subscribe_frame_handlers.router,
-                       user_posting_handlers.router)
+                       user_posting_handlers.router,
+                       user_post_delete_handlers.router,
+                       user_post_edit_handlers.router)
     dp.include_router(other_handlers.router)
-
+    # dp.message.middleware(SchedulerMiddleware())
     @dp.error()
     async def error_handler(event: ErrorEvent, data: Dict[str, Any]):
         logger.critical("Критическая ошибка: %s", event.exception, exc_info=True)

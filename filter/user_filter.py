@@ -21,7 +21,7 @@ async def check_role(tg_id: int, role: str) -> bool:
     :param role: str
     :return: true если пользователь администратор, false в противном случае
     """
-    logging.info('check_role')
+    logging.info(f'check_role {tg_id} {role}')
     user = await rq.get_user(tg_id=tg_id)
     return user.role == role
 

@@ -1,6 +1,6 @@
 from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
-from database.models import Frame
+from database.models import Post
 import logging
 
 
@@ -38,9 +38,10 @@ def keyboard_user_publish_one() -> InlineKeyboardMarkup:
 
 def keyboard_user_publish() -> InlineKeyboardMarkup:
     logging.info("keyboard_user_publish")
-    button_1 = InlineKeyboardButton(text='Опубликовать пост',  callback_data=f'publish_post')
-    button_2 = InlineKeyboardButton(text='Удалить пост', callback_data=f'delete_post')
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2]])
+    button_1 = InlineKeyboardButton(text='Создать пост',  callback_data=f'publish_post')
+    button_2 = InlineKeyboardButton(text='Редактировать пост', callback_data=f'edit_post')
+    button_3 = InlineKeyboardButton(text='Удалить пост', callback_data=f'delete_post')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2], [button_3]])
     return keyboard
 
 
@@ -57,7 +58,8 @@ def keyboard_show_post(manager_tg_id: int, location: str) -> InlineKeyboardMarku
     button_2 = InlineKeyboardButton(text='МЕСТОПОЛОЖЕНИЕ', url=location)
     button_3 = InlineKeyboardButton(text='Опубликовать',  callback_data=f'publishpost')
     button_4 = InlineKeyboardButton(text='Отменить', callback_data=f'cancelpost')
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2], [button_3], [button_4]])
+    button_5 = InlineKeyboardButton(text='Автопостинг', callback_data=f'autopost')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2], [button_3], [button_4], [button_5]])
     return keyboard
 
 
@@ -66,7 +68,8 @@ def keyboard_show_post_(user_tg_id: int) -> InlineKeyboardMarkup:
     button_1 = InlineKeyboardButton(text='👤ОТКЛИКНУТЬСЯ 👤',  url=f'tg://user?id={user_tg_id}')
     button_3 = InlineKeyboardButton(text='Опубликовать',  callback_data=f'publishpost')
     button_4 = InlineKeyboardButton(text='Отменить', callback_data=f'cancelpost')
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_3], [button_4]])
+    button_5 = InlineKeyboardButton(text='Автопостинг', callback_data=f'autopost')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_3], [button_4], [button_5]])
     return keyboard
 
 
@@ -102,3 +105,37 @@ def keyboards_list_post(block: int, id_post: int):
                                          callback_data=f'deletepost_{id_post}')
     kb_builder.row(button_back, button_delete, button_next)
     return kb_builder.as_markup()
+
+
+def keyboard_post_autoposting(info_post: Post) -> InlineKeyboardMarkup:
+    logging.info("keyboard_change_post_autoposting")
+    if info_post.post_autopost_1 == '':
+        button_1 = InlineKeyboardButton(text='Автопубликация 1 ❌',
+                                        callback_data='addautopost_1')
+    else:
+        button_1 = InlineKeyboardButton(text=f'Автопубликация 1 - {info_post.post_autopost_1}',
+                                        callback_data='addautopost_1')
+    if info_post.post_autopost_2 == '':
+        button_2 = InlineKeyboardButton(text='Автопубликация 2 ❌',
+                                        callback_data='addautopost_2')
+    else:
+        button_2 = InlineKeyboardButton(text=f'Автопубликация 2 - {info_post.post_autopost_2}',
+                                        callback_data='addautopost_2')
+    if info_post.post_autopost_3 == '':
+        button_3 = InlineKeyboardButton(text='Автопубликация 3 ❌',
+                                        callback_data='addautopost_3')
+    else:
+        button_3 = InlineKeyboardButton(text=f'Автопубликация 3 - {info_post.post_autopost_3}',
+                                        callback_data='autopost_3')
+    button_4 = InlineKeyboardButton(text='Опубликовать',
+                                    callback_data='addautopost_confirm')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2], [button_3], [button_4]])
+    return keyboard
+
+
+def keyboard_delete_autoposting() -> InlineKeyboardMarkup:
+    logging.info("keyboard_delete_autoposting")
+    button_1 = InlineKeyboardButton(text='Убрать с автопубликации',
+                                    callback_data=f'delete_autoposting')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1]])
+    return keyboard

@@ -352,6 +352,16 @@ async def get_group_id(id_: int) -> Group:
         return await session.scalar(select(Group).where(Group.id == id_))
 
 
+async def get_group_peer_id(peer_id: int) -> Group:
+    """
+    Получаем группу по peer_id
+    :return:
+    """
+    logging.info(f'get_group_peer_id')
+    async with async_session() as session:
+        return await session.scalar(select(Group).where(Group.group_id == peer_id))
+
+
 async def get_group_manager_partner(tg_id_partner: int, tg_id_manager: int) -> list[Group]:
     """
     Получаем список групп менеджера в которые добавил его партнер
@@ -411,7 +421,13 @@ async def delete_group(id_: int):
 """POST"""
 
 
-async def add_post(data: dict) -> None:
+@dataclass
+class StatusPost:
+    create = "create"
+    publish = "publish"
+
+
+async def add_post(data: dict) -> int:
     """
     Добавляем новый пост
     :param data:
@@ -419,11 +435,15 @@ async def add_post(data: dict) -> None:
     """
     logging.info(f'add_post')
     async with async_session() as session:
-        session.add(Post(**data))
+        new_post = Post(**data)
+        session.add(new_post)
+        await session.flush()
+        id_ = new_post.id
         await session.commit()
+        return id_
 
 
-async def get_post_manager(tg_id_manager: int) -> list[Post]:
+async def get_post_manager_two_day(tg_id_manager: int) -> list[Post]:
     """
     Получаем список постов менеджера
     :param tg_id_manager:
@@ -436,7 +456,42 @@ async def get_post_manager(tg_id_manager: int) -> list[Post]:
         current_date = datetime.now().strftime('%d-%m-%Y %H:%M')
         list_posts = []
         for post in posts:
-            delta_time = (datetime.strptime(current_date, date_format) - datetime.strptime(post.post_date, date_format))
+            delta_time = (datetime.strptime(current_date, date_format) - datetime.strptime(post.post_date_create, date_format))
+            if delta_time.seconds < 60*60*47:
+                list_posts.append(post)
+        return list_posts
+
+
+async def get_post_manager(tg_id_manager: int) -> list[Post]:
+    """
+    Получаем список постов менеджера
+    :param tg_id_manager:
+    :return:
+    """
+    logging.info(f'get_post_manager')
+    async with async_session() as session:
+        posts = await session.scalars(select(Post).where(Post.tg_id_manager == tg_id_manager))
+        return [post for post in posts]
+
+
+async def get_post_manager_satus(tg_id_manager: int, status: str) -> list[Post]:
+    """
+    Получаем список постов менеджера c указанным статусом
+    :param tg_id_manager:
+    :param status:
+    :return:
+    """
+    logging.info(f'get_post_manager')
+    async with async_session() as session:
+        posts: list[Post] = await session.scalars(select(Post).filter(Post.tg_id_manager == tg_id_manager,
+                                                                      Post.status == status))
+        date_format = '%d-%m-%Y %H:%M'
+        current_date = datetime.now().strftime('%d-%m-%Y %H:%M')
+        list_posts = []
+        for post in posts:
+            delta_time = (datetime.strptime(current_date,
+                                            date_format) - datetime.strptime(post.post_date_create,
+                                                                             date_format))
             if delta_time.seconds < 60*60*47:
                 list_posts.append(post)
         return list_posts
@@ -444,7 +499,7 @@ async def get_post_manager(tg_id_manager: int) -> list[Post]:
 
 async def get_posts() -> list[Post]:
     """
-    Получаем список постов рпоекта
+    Получаем список постов проекта
     :return:
     """
     logging.info(f'get_posts')
@@ -474,6 +529,86 @@ async def delete_post(id_: int):
         post = await session.scalar(select(Post).where(Post.id == id_))
         if post:
             await session.delete(post)
+            await session.commit()
+
+
+async def set_post_location_id(id_post: int, location: str) -> None:
+    """
+    Обновляем локацию поста
+    :param id_post:
+    :param location:
+    :return:
+    """
+    logging.info(f'set_post_location_id')
+    async with async_session() as session:
+        post = await session.scalar(select(Post).where(Post.id == id_post))
+        if post:
+            post.post_location = location
+            await session.commit()
+
+
+async def set_post_text_id(id_post: int, text: str) -> None:
+    """
+    Обновляем локацию поста
+    :param id_post:
+    :param text:
+    :return:
+    """
+    logging.info(f'set_post_location_id')
+    async with async_session() as session:
+        post = await session.scalar(select(Post).where(Post.id == id_post))
+        if post:
+            post.posts_text = text
+            await session.commit()
+
+
+async def set_post_autoposting_id(id_post: int, autoposting: str, num: str) -> None:
+    """
+    Обновляем данные автопостинга
+    :param id_post:
+    :param autoposting:
+    :return:
+    """
+    logging.info(f'set_post_autoposting_id')
+    async with async_session() as session:
+        post = await session.scalar(select(Post).where(Post.id == id_post))
+        if post:
+            if num == '1':
+                post.post_autopost_1 = autoposting
+            elif num == '2':
+                post.post_autopost_2 = autoposting
+            elif num == '3':
+                post.post_autopost_3 = autoposting
+            await session.commit()
+
+
+async def set_post_posts_chat_message_id(id_post: int, posts_chat_message: str) -> None:
+    """
+    Обновляем локацию поста
+    :param id_post:
+    :param posts_chat_message:
+    :return:
+    """
+    logging.info(f'set_post_location_id')
+    async with async_session() as session:
+        post = await session.scalar(select(Post).where(Post.id == id_post))
+        if post:
+            post.posts_chat_message = posts_chat_message
+            await session.commit()
+
+
+async def set_post_status(id_post: int, status: str) -> None:
+    """
+    Обновляем локацию поста
+    :param id_post:
+    :param status:
+    :return:
+    """
+    logging.info(f'set_post_status')
+    async with async_session() as session:
+        post = await session.scalar(select(Post).where(Post.id == id_post))
+        if post:
+            post.status = status
             await session.commit()
 
 
