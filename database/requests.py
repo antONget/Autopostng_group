@@ -157,7 +157,6 @@ async def add_manager(tg_id: int, data: dict) -> None:
     logging.info(f'add_manager {tg_id} {data}')
     async with async_session() as session:
         manager = await session.scalar(select(Manager).where(Manager.tg_id_manager == tg_id))
-        # если пользователя нет в базе
         if not manager:
             session.add(Manager(**data))
             await session.commit()
