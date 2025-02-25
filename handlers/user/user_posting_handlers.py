@@ -440,7 +440,7 @@ async def publish_post_autopost(callback: CallbackQuery, state: FSMContext, bot:
             # scheduler.add_job(func=publish_post, trigger='cron', year=year, month=month, day=day, hour=hour,
             #                   minute=minute,
             #                   args=(id_post_change, callback, state, bot))
-            await callback.message.answer(f'Пост будет опубликован {info_post.post_autopost_1}')
+            await callback.message.answer(f'Пост будет опубликован {info_post.post_autopost_2}')
         if info_post.post_autopost_3:
             publish_flag = False
             # hour = int(info_post.post_autopost_3.split(' ')[1].split(':')[0])
@@ -452,7 +452,7 @@ async def publish_post_autopost(callback: CallbackQuery, state: FSMContext, bot:
             # scheduler.add_job(func=publish_post, trigger='cron', year=year, month=month, day=day, hour=hour,
             #                   minute=minute,
             #                   args=(id_post_change, callback, state, bot))
-            await callback.message.answer(f'Пост будет опубликован {info_post.post_autopost_1}')
+            await callback.message.answer(f'Пост будет опубликован {info_post.post_autopost_3}')
         if publish_flag:
             await publish_post(id_post=id_post_change, callback=callback, bot=bot)
 
