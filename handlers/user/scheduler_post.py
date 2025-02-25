@@ -88,10 +88,10 @@ async def publish_post(id_post: int, callback: CallbackQuery, bot: Bot):
     str_group_ids: str = await get_user_group_for_publish(user_tg_id=callback.from_user.id, bot=bot)
     list_ids_group: list = list(set(str_group_ids.split(',')))
     message_chat = []
-    posts = await rq.get_posts()
-    count_posts = len([post for post in posts])
-    post_managers = await rq.get_post_manager(tg_id_manager=callback.from_user.id)
-    count_post_manager = len([post for post in post_managers])
+    # posts = await rq.get_posts()
+    # count_posts = [post for post in posts]
+    # post_managers = await rq.get_post_manager(tg_id_manager=callback.from_user.id)
+    # count_post_manager = len([post for post in post_managers])
     info_user: User = await rq.get_user(tg_id=callback.from_user.id)
     data_reg = info_user.data_reg
     current_date = datetime.now()
@@ -99,9 +99,9 @@ async def publish_post(id_post: int, callback: CallbackQuery, bot: Bot):
                                  month=int(data_reg.split('-')[1]),
                                  day=int(data_reg.split('-')[0]))
     count_day = (current_date - data_reg_datetime).days
-    info_autor = f'№ {count_posts} 👉 <a href="tg://user?id={callback.from_user.id}">' \
+    info_autor = f'№ {id_post} 👉 <a href="tg://user?id={callback.from_user.id}">' \
                  f'{callback.from_user.username}</a>\n' \
-                 f'Создано заказов {count_post_manager}\n' \
+                 f'Создано заказов {info_user.count_order}\n' \
                  f'Зарегистрирован {count_day} день назад\n\n'
     for i, group_id in enumerate(list_ids_group):
         group: Group = await rq.get_group_id(id_=group_id)
@@ -139,3 +139,4 @@ async def publish_post(id_post: int, callback: CallbackQuery, bot: Bot):
                                             posts_chat_message=posts_chat_message)
     await rq.set_post_status(id_post=id_post,
                              status=rq.StatusPost.publish)
+    await rq.set_count_order_user(id_user=callback.from_user.id)

@@ -6,7 +6,7 @@ def keyboard_main_admin() -> ReplyKeyboardMarkup:
     logging.info("keyboard_main_admin")
     button_1 = KeyboardButton(text='Мои группы')
     button_2 = KeyboardButton(text='Тарифы')
-    button_3 = KeyboardButton(text='Опубликовать пост')
+    button_3 = KeyboardButton(text='Создать пост ✏️')
     button_4 = KeyboardButton(text='Приобрести подписку')
     button_5 = KeyboardButton(text='Реквизиты')
     button_6 = KeyboardButton(text='Партнеры')
@@ -23,7 +23,7 @@ def keyboard_main_partner() -> ReplyKeyboardMarkup:
     logging.info("keyboard_main_partner")
     button_1 = KeyboardButton(text='Мои группы')
     button_2 = KeyboardButton(text='Тарифы')
-    button_3 = KeyboardButton(text='Опубликовать пост')
+    button_3 = KeyboardButton(text='Создать пост ✏️')
     button_4 = KeyboardButton(text='Приобрести подписку')
     button_5 = KeyboardButton(text='Реквизиты')
     button_6 = KeyboardButton(text='Черный список')
@@ -34,9 +34,12 @@ def keyboard_main_partner() -> ReplyKeyboardMarkup:
 
 def keyboard_main_manager() -> ReplyKeyboardMarkup:
     logging.info("keyboard_main_manager")
-    button_1 = KeyboardButton(text='Приобрести подписку')
-    button_2 = KeyboardButton(text='Опубликовать пост')
-    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2]], resize_keyboard=True)
+    button_1 = KeyboardButton(text='Приобрести подписку 🧾')
+    button_2 = KeyboardButton(text='Создать пост ✏️')
+    button_3 = KeyboardButton(text='Редактировать пост 🗒')
+    button_4 = KeyboardButton(text='Удалить пост ❌')
+    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_3], [button_4]],
+                                   resize_keyboard=True)
     return keyboard
 
 

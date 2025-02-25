@@ -22,7 +22,7 @@ class ManagerState(StatesGroup):
     check_pay = State()
 
 
-@router.message(F.text == 'Приобрести подписку')
+@router.message(F.text == 'Приобрести подписку 🧾')
 @error_handler
 async def process_select_group_manager(message: Message, bot: Bot) -> None:
     """

@@ -22,6 +22,26 @@ router = Router()
 router.message.filter(F.chat.type == "private")
 
 
+@router.message(F.text == 'Удалить пост ❌')
+@error_handler
+async def process_delete_post(message: Message, state: FSMContext, bot: Bot):
+    """
+    Удаление поста
+    :param message:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info(f'process_delete_post: {message.from_user.id}')
+    list_posts: list[Post] = await rq.get_post_manager(tg_id_manager=message.from_user.id)
+    if not list_posts:
+        await message.answer(text='Нет постов для удаления.',
+                             reply_markup=None)
+        return
+    await message.answer(text=f'{list_posts[0].posts_text}',
+                         reply_markup=kb.keyboards_list_post(block=0, id_post=list_posts[0].id))
+
+
 @router.callback_query(F.data == 'delete_post')
 @error_handler
 async def process_delete_post(callback: CallbackQuery, state: FSMContext, bot: Bot):
@@ -32,8 +52,8 @@ async def process_delete_post(callback: CallbackQuery, state: FSMContext, bot: B
     :param bot:
     :return:
     """
-    logging.info(f'process_delete_post: {callback.message.chat.id}')
-    list_posts: list[Post] = await rq.get_post_manager(tg_id_manager=callback.message.chat.id)
+    logging.info(f'process_delete_post: {callback.from_user.id}')
+    list_posts: list[Post] = await rq.get_post_manager(tg_id_manager=callback.from_user.id)
     if not list_posts:
         await callback.message.edit_text(text='Нет постов для удаления.',
                                          reply_markup=None)
@@ -55,8 +75,8 @@ async def process_forward_post(callback: CallbackQuery, state: FSMContext, bot: 
     :param bot:
     :return:
     """
-    logging.info(f'process_forward_post: {callback.message.chat.id}')
-    list_posts: list = await rq.get_post_manager(tg_id_manager=callback.message.chat.id)
+    logging.info(f'process_forward_post: {callback.from_user.id}')
+    list_posts: list = await rq.get_post_manager(tg_id_manager=callback.from_user.id)
     count_block = len(list_posts)
     num_block = int(callback.data.split('_')[-1]) + 1
     if num_block == count_block:
@@ -82,8 +102,8 @@ async def process_back_post(callback: CallbackQuery, state: FSMContext, bot: Bot
     :param bot:
     :return:
     """
-    logging.info(f'process_back_post: {callback.message.chat.id}')
-    list_posts: list = await rq.get_post_manager(tg_id_manager=callback.message.chat.id)
+    logging.info(f'process_back_post: {callback.from_user.id}')
+    list_posts: list = await rq.get_post_manager(tg_id_manager=callback.from_user.id)
     count_block = len(list_posts)
     num_block = int(callback.data.split('_')[-1]) - 1
     if num_block < 0:
@@ -108,7 +128,7 @@ async def process_back_post(callback: CallbackQuery, state: FSMContext, bot: Bot
     :param bot:
     :return:
     """
-    logging.info(f'process_back_post: {callback.message.chat.id}')
+    logging.info(f'process_back_post: {callback.from_user.id}')
     id_post = int(callback.data.split('_')[-1])
     post = await rq.get_post_id(id_=id_post)
     posts_chat_message = post.posts_chat_message

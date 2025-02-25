@@ -31,6 +31,21 @@ class ChangePost(StatesGroup):
     autoposting_3_change = State()
 
 
+@router.message(F.text == 'Редактировать пост 🗒')
+@error_handler
+async def process_edit_post(message: Message, state: FSMContext, bot: Bot):
+    """
+    Редактирование поста
+    :param message:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info(f'process_edit_post: {message.from_user.id}')
+    await message.answer(text=f'Выберите тип поста для редактирования',
+                         reply_markup=kb.keyboard_type_post())
+
+
 @router.callback_query(F.data == 'edit_post')
 @error_handler
 async def process_edit_post(callback: CallbackQuery, state: FSMContext, bot: Bot):
@@ -41,7 +56,7 @@ async def process_edit_post(callback: CallbackQuery, state: FSMContext, bot: Bot
     :param bot:
     :return:
     """
-    logging.info(f'process_edit_post: {callback.message.chat.id}')
+    logging.info(f'process_edit_post: {callback.from_user.id}')
     await callback.message.edit_text(text=f'Выберите тип поста для редактирования',
                                      reply_markup=kb.keyboard_type_post())
     await callback.answer()
@@ -188,36 +203,12 @@ async def process_change_post(callback: CallbackQuery, state: FSMContext, bot: B
         publish_flag = True
         if info_post.post_autopost_1:
             publish_flag = False
-            # hour = int(info_post.post_autopost_1.split(' ')[1].split(':')[0])
-            # minute = int(info_post.post_autopost_1.split(' ')[1].split(':')[1])
-            # year = int(info_post.post_autopost_1.split(' ')[0].split('.')[-1])
-            # month = int(info_post.post_autopost_1.split(' ')[0].split('.')[-2])
-            # day = int(info_post.post_autopost_1.split(' ')[0].split('.')[0])
-            # scheduler = await scheduler_task_cron()
-            # scheduler.add_job(func=publish_post, trigger='cron', year=year, month=month, day=day, hour=hour, minute=minute,
-            #                   args=(id_post_change, callback, state, bot))
             await callback.message.answer(f'Пост будет опубликован {info_post.post_autopost_1}')
         if info_post.post_autopost_2:
             publish_flag = False
-            # hour = int(info_post.post_autopost_2.split(' ')[1].split(':')[0])
-            # minute = int(info_post.post_autopost_2.split(' ')[1].split(':')[1])
-            # year = int(info_post.post_autopost_2.split(' ')[0].split('.')[-1])
-            # month = int(info_post.post_autopost_2.split(' ')[0].split('.')[-2])
-            # day = int(info_post.post_autopost_2.split(' ')[0].split('.')[0])
-            # scheduler = await scheduler_task_cron()
-            # scheduler.add_job(func=publish_post, trigger='cron', year=year, month=month, day=day, hour=hour, minute=minute,
-            #                   args=(id_post_change, callback, state, bot))
             await callback.message.answer(f'Пост будет опубликован {info_post.post_autopost_2}')
         if info_post.post_autopost_3:
             publish_flag = False
-            # hour = int(info_post.post_autopost_3.split(' ')[1].split(':')[0])
-            # minute = int(info_post.post_autopost_3.split(' ')[1].split(':')[1])
-            # year = int(info_post.post_autopost_3.split(' ')[0].split('.')[-1])
-            # month = int(info_post.post_autopost_3.split(' ')[0].split('.')[-2])
-            # day = int(info_post.post_autopost_3.split(' ')[0].split('.')[0])
-            # scheduler = await scheduler_task_cron()
-            # scheduler.add_job(func=publish_post, trigger='cron', year=year, month=month, day=day, hour=hour, minute=minute,
-            #                   args=(id_post_change, callback, state, bot))
             await callback.message.answer(f'Пост будет опубликован {info_post.post_autopost_3}')
         if publish_flag:
             await publish_post(id_post=id_post_change, callback=callback, bot=bot)
@@ -331,10 +322,19 @@ async def change_autoposting(callback: CallbackQuery, state: FSMContext, bot: Bo
         data = await state.get_data()
         id_post_change = data['id_post_change']
         info_post: Post = await rq.get_post_id(id_=id_post_change)
+        text_autopost = 'Время автопостинга установлено:\n'
+        count = 0
+        for autopost in [info_post.post_autopost_1, info_post.post_autopost_2, info_post.post_autopost_3]:
+            if autopost:
+                count += 1
+                text_autopost += f'{count}. {autopost}\n'
         text_publish = info_post.posts_text
         type_post = data['type_post']
-        await callback.message.edit_text(text=text_publish,
-                                         reply_markup=kb.keyboard_change_post(type_post=type_post))
+        if text_autopost != 'Время автопостинга установлено:\n':
+            await callback.message.edit_text(text=text_autopost)
+        else:
+            await callback.message.edit_text(text=text_publish,
+                                             reply_markup=kb.keyboard_change_post(type_post=type_post))
         await state.set_state(state=None)
 
 
@@ -434,24 +434,45 @@ async def change_publish_post(post_id: int, callback: CallbackQuery, bot: Bot):
                                                f' <a href="tg://user?id={group_info.tg_id_partner}">владельцу</a> ')
         else:
             if info_post.post_location == '':
-                post = await bot.edit_message_text(chat_id=group_info.group_id,
-                                                   message_id=message_id,
-                                                   text=f"{info_autor}{info_post.posts_text}\n"
-                                                        f"По всем вопросам пишите <a href='tg://user?id="
-                                                        f"{callback.from_user.id}'>"
-                                                        f"{callback.from_user.username}</a>",
-                                                   reply_markup=kb.keyboard_post_(
-                                                                user_tg_id=callback.message.chat.id))
+                try:
+                    post = await bot.edit_message_text(chat_id=group_info.group_id,
+                                                       message_id=message_id,
+                                                       text=f"{info_autor}{info_post.posts_text}\n"
+                                                            f"По всем вопросам пишите <a href='tg://user?id="
+                                                            f"{callback.from_user.id}'>"
+                                                            f"{callback.from_user.username}</a>",
+                                                       reply_markup=kb.keyboard_post_(
+                                                                    user_tg_id=callback.message.chat.id))
+                except:
+                    post = await bot.edit_message_text(chat_id=group_info.group_id,
+                                                       message_id=message_id,
+                                                       text=f"{info_autor}{info_post.posts_text}\n"
+                                                            f"По всем вопросам пишите <a href='tg://user?id="
+                                                            f"{callback.from_user.id}'>"
+                                                            f"{callback.from_user.username}</a>.",
+                                                       reply_markup=kb.keyboard_post_(
+                                                           user_tg_id=callback.message.chat.id))
             else:
-                post = await bot.edit_message_text(chat_id=group_info.group_id,
-                                                   message_id=message_id,
-                                                   text=f"{info_autor}{info_post.posts_text}\n"
-                                                        f"По всем вопросам пишите <a href='tg://user?id="
-                                                        f"{callback.from_user.id}'>"
-                                                        f"{callback.from_user.username}</a>",
-                                                   reply_markup=kb.keyboard_post(
-                                                                user_tg_id=callback.message.chat.id,
-                                                                location=info_post.post_location))
+                try:
+                    post = await bot.edit_message_text(chat_id=group_info.group_id,
+                                                       message_id=message_id,
+                                                       text=f"{info_autor}{info_post.posts_text}\n"
+                                                            f"По всем вопросам пишите <a href='tg://user?id="
+                                                            f"{callback.from_user.id}'>"
+                                                            f"{callback.from_user.username}</a>",
+                                                       reply_markup=kb.keyboard_post(
+                                                                    user_tg_id=callback.message.chat.id,
+                                                                    location=info_post.post_location))
+                except:
+                    post = await bot.edit_message_text(chat_id=group_info.group_id,
+                                                       message_id=message_id,
+                                                       text=f"{info_autor}{info_post.posts_text}\n"
+                                                            f"По всем вопросам пишите <a href='tg://user?id="
+                                                            f"{callback.from_user.id}'>"
+                                                            f"{callback.from_user.username}</a>.",
+                                                       reply_markup=kb.keyboard_post(
+                                                           user_tg_id=callback.message.chat.id,
+                                                           location=info_post.post_location))
             message_chat.append(f'{group_info.group_id}!{post.message_id}')
             await callback.message.answer(text=f'Пост обновлен в группе {group_info.title}')
     await callback.message.edit_text(text=f'Обновление поста по списку групп завершена',

@@ -20,6 +20,7 @@ class User(Base):
     role: Mapped[str] = mapped_column(String(20), default='user')
     data_reg: Mapped[str] = mapped_column(String())
     requisites: Mapped[str] = mapped_column(String(), default='none')
+    count_order: Mapped[int] = mapped_column(Integer, default=1)
 
 
 class Group(Base):

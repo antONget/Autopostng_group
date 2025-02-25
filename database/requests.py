@@ -114,6 +114,20 @@ async def set_role_user(id_user: int, role: str) -> None:
             await session.commit()
 
 
+async def set_count_order_user(id_user: int) -> None:
+    """
+    Обновляем роль пользователя
+    :return:
+    """
+    logging.info(f'set_count_order_user {id_user}')
+    async with async_session() as session:
+        user = await session.scalar(select(User).where(User.tg_id == id_user))
+        if user:
+            count_order = user.count_order
+            user.count_order = count_order + 1
+            await session.commit()
+
+
 async def set_requisites(tg_id: int, requisites: str) -> None:
     """
     Обновляем реквизиты пользователя

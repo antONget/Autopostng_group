@@ -33,7 +33,7 @@ class ManagerState(StatesGroup):
     auto_post_3 = State()
 
 
-@router.message(F.text == 'Опубликовать пост')
+@router.message(F.text == 'Создать пост ✏️')
 @error_handler
 async def user_group_for_publish(message: Message, state: FSMContext, bot: Bot) -> None:
     """
@@ -133,8 +133,11 @@ async def user_group_for_publish(message: Message, state: FSMContext, bot: Bot) 
                 await message.answer(text=f'{text}\n\nУ вас нет доступных групп для публикаций')
                 return
             await state.update_data(str_group_ids=str_group_ids)
-            await message.answer(text=text,
-                                 reply_markup=kb.keyboard_user_publish())
+            await message.answer(text=f"{text}Пришлите текст заявки для размещения в группах",
+                                 reply_markup=None)
+            await state.set_state(ManagerState.text_post)
+            # await message.answer(text=text,
+            #                      reply_markup=kb.keyboard_user_publish())
 
 
 @router.callback_query(F.data == 'publish_post')
@@ -221,6 +224,10 @@ async def get_text_post(message: Message, state: FSMContext, bot: Bot):
     :return:
     """
     logging.info(f'get_text_post: {message.chat.id}')
+    if message.text in ['Приобрести подписку 🧾', 'Создать пост ✏️', 'Редактировать пост 🗒', 'Удалить пост ❌']:
+        await message.answer(text='Создание поста отменено')
+        await state.set_state(state=None)
+        return
     await state.update_data(text_post=message.html_text)
     await message.answer(text='Пришлите ссылку на местоположение',
                          reply_markup=kb.keyboard_pass_location())
