@@ -248,7 +248,8 @@ async def get_location(message: Message, state: FSMContext, bot: Bot):
              'post_location': message.text,
              'post_date_create': datetime.now().strftime('%d-%m-%Y %H:%M'),
              'status': rq.StatusPost.create}
-    await rq.add_post(data=data_)
+    post_id: int = await rq.add_post(data=data_)
+    await state.update_data(post_id=post_id)
     preview = 'Предпросмотр поста для публикации:\n\n'
     await message.answer(text=f"{preview}{data['text_post']}",
                          reply_markup=kb.keyboard_show_post(manager_tg_id=message.chat.id, location=message.text))

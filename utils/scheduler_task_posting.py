@@ -146,7 +146,7 @@ async def publish_post_task(id_post: int, user_tg_id: int, bot: Bot):
 
 async def scheduler_send_post_for_group(bot: Bot):
     list_posts: list[Post] = await rq.get_posts()
-    current_time = datetime.now().strftime('%d.%m.%Y %H:%M')
+    current_time = datetime.now().strftime('%H:%M')
     for info_post in list_posts:
         if current_time == info_post.post_autopost_1:
             await publish_post_task(id_post=info_post.id,

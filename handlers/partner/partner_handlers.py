@@ -192,8 +192,8 @@ async def process_black_list_select(callback: CallbackQuery, state: FSMContext, 
             await callback.message.edit_text(text=f'Пользователь <a href="tg://user?id={user.tg_id}">{user.username}</a>'
                                                   f' добавлен в <b>черный список</b> во всех группах бота')
             await bot.send_message(chat_id=user.tg_id,
-                                   text=f'Администратор <a href="tg://user?id={callback.from_user.id}"> '
-                                        f'{callback.from_user.username}</a> добавил вас в <b>черный список</b>, '
+                                   text=f'Администратор <a href="tg://user?id={callback.from_user.id}">'
+                                        f'@{callback.from_user.username}</a> добавил вас в <b>черный список</b>, '
                                         f'вы не можете публиковать объявления в боте')
         else:
             await callback.message.edit_text(text=f'Пользователь <a href="tg://user?id={user.tg_id}">{user.username}</a>'

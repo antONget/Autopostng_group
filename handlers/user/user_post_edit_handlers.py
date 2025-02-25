@@ -316,7 +316,7 @@ async def change_autoposting(callback: CallbackQuery, state: FSMContext, bot: Bo
     """
     logging.info('change_autoposting')
     action = callback.data.split('_')[-1]
-    await callback.message.edit_text(text='Пришлите время для автопубликации, в формате: дд.мм.гггг чч:мм',
+    await callback.message.edit_text(text='Пришлите время для автопубликации, в формате: чч:мм',
                                      reply_markup=kb.keyboard_delete_autoposting())
     if action == '1':
         await state.set_state(ChangePost.autoposting_1_change)
@@ -351,7 +351,7 @@ async def change_post_autoposting(message: Message, state: FSMContext, bot: Bot)
     :return:
     """
     logging.info('change_post_autoposting')
-    pattern = r'^(?:[0-2]\d|3[01])[.](?:[01]\d|1[0-2])[.](\d{4}) (?:[01]\d|2[0-3]):[0-5]\d$'
+    pattern = r'^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
     time_autoposting = message.text
     if re.match(pattern, time_autoposting):
         await state.set_state(state=None)
@@ -365,7 +365,7 @@ async def change_post_autoposting(message: Message, state: FSMContext, bot: Bot)
                              reply_markup=kb.keyboard_change_post_autoposting(info_post=info_post))
     else:
         await message.answer(text='Время автопубликации указано некорректно. Пришлите время для автопубликации,'
-                                  ' в формате: дд.мм.гггг чч:мм',
+                                  ' в формате: чч:мм',
                              reply_markup=kb.keyboard_delete_autoposting())
 
 
@@ -379,7 +379,7 @@ async def delete_autoposting(callback: CallbackQuery, state: FSMContext, bot: Bo
     :param bot:
     :return:
     """
-    logging.info('delete_autopodting')
+    logging.info('delete_autoposting')
     await state.set_state(state=None)
     data = await state.get_data()
     id_post_change = data['id_post_change']
