@@ -14,7 +14,7 @@ from config_data.config import Config, load_config
 from database.models import User, Frame, Group, Subscribe, Post
 from handlers.user.scheduler_post import publish_post
 import validators
-
+import re
 import logging
 from datetime import datetime
 
@@ -401,7 +401,7 @@ async def publish_post_autopost(callback: CallbackQuery, state: FSMContext, bot:
     """
     logging.info(f'publish_post_autopost: {callback.message.chat.id}')
     action = callback.data.split('_')[-1]
-    await callback.message.edit_text(text='Пришлите время для автопубликации, в формате: дд.мм.гггг чч:мм',
+    await callback.message.edit_text(text='Пришлите время для автопубликации, в формате: чч:мм',
                                      reply_markup=kb.keyboard_delete_autoposting())
     if action == '1':
         await state.set_state(ManagerState.auto_post_1)
@@ -454,4 +454,35 @@ async def publish_post_autopost(callback: CallbackQuery, state: FSMContext, bot:
             #                   args=(id_post_change, callback, state, bot))
             await callback.message.answer(f'Пост будет опубликован {info_post.post_autopost_1}')
         if publish_flag:
-            await publish_post(id_post=id_post_change, callback=callback, state=state, bot=bot)
+            await publish_post(id_post=id_post_change, callback=callback, bot=bot)
+
+
+@router.message(F.text, StateFilter(ManagerState.auto_post_1))
+@router.message(F.text, StateFilter(ManagerState.auto_post_2))
+@router.message(F.text, StateFilter(ManagerState.auto_post_3))
+@error_handler
+async def change_post_autoposting(message: Message, state: FSMContext, bot: Bot):
+    """
+    Обновление даты автопостинга
+    :param message:
+    :param state:
+    :param bot:
+    :return:
+    """
+    logging.info('change_post_autoposting')
+    pattern = r'^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$'
+    time_autoposting = message.text
+    if re.match(pattern, time_autoposting):
+        await state.set_state(state=None)
+        data = await state.get_data()
+        post_id = data['post_id']
+        num_autoposting = data['num_autoposting']
+        await rq.set_post_autoposting_id(id_post=post_id, autoposting=time_autoposting, num=num_autoposting)
+
+        info_post: Post = await rq.get_post_id(id_=post_id)
+        await message.answer(text='Выберите раздел',
+                             reply_markup=kb.keyboard_post_autoposting(info_post=info_post))
+    else:
+        await message.answer(text='Время автопубликации указано некорректно. Пришлите время для автопубликации,'
+                                  ' в формате: чч:мм',
+                             reply_markup=kb.keyboard_delete_autoposting())
