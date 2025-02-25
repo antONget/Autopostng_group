@@ -285,7 +285,7 @@ async def process_pass_location(callback: CallbackQuery, state: FSMContext, bot:
 
 @router.callback_query(F.data == 'publishpost')
 @error_handler
-async def publish_post(callback: CallbackQuery, state: FSMContext, bot: Bot):
+async def publish_post_press_button(callback: CallbackQuery, state: FSMContext, bot: Bot):
     """
     Публикация поста
     :param callback: publishpost
@@ -293,10 +293,12 @@ async def publish_post(callback: CallbackQuery, state: FSMContext, bot: Bot):
     :param bot:
     :return:
     """
-    logging.info(f'publish_post: {callback.message.chat.id}')
+    logging.info(f'publish_post_press_button: {callback.from_user.id}')
     data = await state.get_data()
     post_id = data['post_id']
-    await publish_post(id_post=post_id, callback=callback, state=state, bot=bot)
+    await publish_post(id_post=post_id, callback=callback, bot=bot)
+    await callback.message.edit_text(text='Пост успешно опубликован',
+                                     reply_markup=None)
     # str_group_ids: str = data['str_group_ids']
     # list_ids_group: list = list(set(str_group_ids.split(',')))
     # message_chat = []
