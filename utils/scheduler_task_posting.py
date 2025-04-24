@@ -1,12 +1,12 @@
 from aiogram import Bot
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ChatPermissions
 from aiogram.enums.chat_member_status import ChatMemberStatus
 
 from database.models import Subscribe, Frame, Group, User, Post
 from database import requests as rq
 from filter.user_filter import check_role
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 
 
 async def get_user_group_for_publish_task(user_tg_id: int, bot: Bot) -> str:
@@ -160,3 +160,26 @@ async def scheduler_send_post_for_group(bot: Bot):
             await publish_post_task(id_post=info_post.id,
                                     user_tg_id=info_post.tg_id_manager,
                                     bot=bot)
+
+
+async def scheduler_restricted(bot: Bot):
+    list_subscribe: list[Subscribe] = await rq.get_subscribes_all()
+    for subscribe in list_subscribe:
+        date_format = '%d-%m-%Y %H:%M'
+        current_date = datetime.now().strftime(date_format)
+        delta_time = (datetime.strptime(subscribe.date_completion, date_format) -
+                      datetime.strptime(current_date, date_format))
+        if delta_time.days < 0:
+            info_frame: Frame = await rq.get_frame_id(id_=subscribe.frame_id)
+            for item in info_frame.list_id_group.split(','):
+                group_info: Group = await rq.get_group_id(id_=item)
+                if group_info:
+                    await bot.restrict_chat_member(
+                        chat_id=group_info.group_id,
+                        user_id=int(subscribe.tg_id),
+                        until_date=datetime.now() + timedelta(seconds=10),
+                        permissions=ChatPermissions(
+                            can_send_messages=False,
+                            can_send_media_messages=False
+                        )
+                    )

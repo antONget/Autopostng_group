@@ -284,8 +284,12 @@ async def process_pass_location(callback: CallbackQuery, state: FSMContext, bot:
     post_id: int = await rq.add_post(data=data_)
     await state.update_data(post_id=post_id)
     preview = 'Предпросмотр поста для публикации:\n\n'
-    await callback.message.edit_text(text=f"{preview}{data['text_post']}",
-                                     reply_markup=kb.keyboard_show_post_(user_tg_id=callback.from_user.id))
+    try:
+        await callback.message.edit_text(text=f"{preview}{data['text_post']}",
+                                         reply_markup=kb.keyboard_show_post_(user_tg_id=callback.from_user.id))
+    except:
+        await callback.message.edit_text(text=f"{preview}{data['text_post']}.",
+                                         reply_markup=kb.keyboard_show_post_(user_tg_id=callback.from_user.id))
     await state.set_state(state=None)
     await callback.answer()
 
@@ -304,8 +308,12 @@ async def publish_post_press_button(callback: CallbackQuery, state: FSMContext, 
     data = await state.get_data()
     post_id = data['post_id']
     await publish_post(id_post=post_id, callback=callback, bot=bot)
-    await callback.message.edit_text(text='Пост успешно опубликован',
-                                     reply_markup=None)
+    try:
+        await callback.message.edit_text(text='Пост успешно опубликован',
+                                         reply_markup=None)
+    except:
+        await callback.message.edit_text(text='Пост успешно опубликован.',
+                                         reply_markup=None)
     # str_group_ids: str = data['str_group_ids']
     # list_ids_group: list = list(set(str_group_ids.split(',')))
     # message_chat = []

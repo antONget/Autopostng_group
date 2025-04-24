@@ -475,8 +475,12 @@ async def change_publish_post(post_id: int, callback: CallbackQuery, bot: Bot):
                                                            location=info_post.post_location))
             message_chat.append(f'{group_info.group_id}!{post.message_id}')
             await callback.message.answer(text=f'Пост обновлен в группе {group_info.title}')
-    await callback.message.edit_text(text=f'Обновление поста по списку групп завершена',
-                                     reply_markup=None)
+    try:
+        await callback.message.edit_text(text=f'Обновление поста по списку групп завершена',
+                                         reply_markup=None)
+    except:
+        await callback.message.edit_text(text=f'Обновление поста по списку групп завершена.',
+                                         reply_markup=None)
     posts_chat_message: str = ','.join(message_chat)
     await rq.set_post_posts_chat_message_id(id_post=post_id,
                                             posts_chat_message=posts_chat_message)

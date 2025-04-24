@@ -771,6 +771,18 @@ async def get_subscribes_user(tg_id: int) -> list[Subscribe]:
         return list_subscribes
 
 
+async def get_subscribes_all() -> list[Subscribe]:
+    """
+    Получение списка подписок всех пользователя
+    :return:
+    """
+    logging.info('get_subscribes_user')
+    async with async_session() as session:
+        subscribes = await session.scalars(select(Subscribe))
+        list_subscribes = [subscribe for subscribe in subscribes]
+        return list_subscribes
+
+
 """ BLACK_LIST """
 
 

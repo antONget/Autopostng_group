@@ -1,5 +1,5 @@
 from aiogram import Router, F, Bot
-from aiogram.types import Message, CallbackQuery
+from aiogram.types import Message, CallbackQuery, ChatPermissions
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import StatesGroup, State
 from aiogram.filters import StateFilter
@@ -9,7 +9,7 @@ from keyboards.user import user_subscribe_keyboards as kb
 from config_data.config import Config, load_config
 from database.models import User, Frame, Group
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, time
 
 config: Config = load_config()
 router = Router()
@@ -243,4 +243,18 @@ async def process_confirm_cancel_payment(callback: CallbackQuery, state: FSMCont
                           'date_completion': date_completion_str,
                           'group_id_list': info_frame.list_id_group}
         await rq.add_subscribe(data=data_subscribe)
+        for item in info_frame.list_id_group.split(','):
+            group_info: Group = await rq.get_group_id(id_=item)
+            if group_info:
+                date_completion = current_date + timedelta(minutes=int(info_frame.period_frame))
+                # print(group_info.group_id, int(user_tg_id), date_completion, date_completion)
+                await bot.restrict_chat_member(
+                    chat_id=group_info.group_id,
+                    user_id=int(user_tg_id),
+                    until_date=datetime.now() + timedelta(seconds=31),
+                    permissions=ChatPermissions(
+                        can_send_messages=False,
+                        can_send_media_messages=False
+                    )
+                )
     await callback.answer()

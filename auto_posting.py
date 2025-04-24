@@ -19,7 +19,7 @@ from handlers import start_handlers, other_handlers
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from database.models import async_main
 from notify_admins import on_startup_notify
-from utils.scheduler_task_posting import scheduler_send_post_for_group
+from utils.scheduler_task_posting import scheduler_send_post_for_group, scheduler_restricted
 # Инициализируем logger
 logger = logging.getLogger(__name__)
 
@@ -46,6 +46,7 @@ async def main():
     dp = Dispatcher()
     scheduler = AsyncIOScheduler(timezone="Europe/Moscow")
     scheduler.add_job(func=scheduler_send_post_for_group, trigger='cron', minute='*', args=(bot,))
+    scheduler.add_job(func=scheduler_restricted, trigger='cron', hour='*', args=(bot,))
     scheduler.start()
     await on_startup_notify(bot=bot)
     # Регистрируем router в диспетчере
