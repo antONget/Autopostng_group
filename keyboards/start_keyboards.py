@@ -7,7 +7,7 @@ def keyboard_main_admin() -> ReplyKeyboardMarkup:
     button_1 = KeyboardButton(text='Мои группы')
     button_2 = KeyboardButton(text='Тарифы')
     button_3 = KeyboardButton(text='Создать пост ✏️')
-    button_4 = KeyboardButton(text='Приобрести подписку')
+    button_4 = KeyboardButton(text='Приобрести подписку 🧾')
     button_5 = KeyboardButton(text='Реквизиты')
     button_6 = KeyboardButton(text='Партнеры')
     button_7 = KeyboardButton(text='Черный список')
@@ -24,7 +24,7 @@ def keyboard_main_partner() -> ReplyKeyboardMarkup:
     button_1 = KeyboardButton(text='Мои группы')
     button_2 = KeyboardButton(text='Тарифы')
     button_3 = KeyboardButton(text='Создать пост ✏️')
-    button_4 = KeyboardButton(text='Приобрести подписку')
+    button_4 = KeyboardButton(text='Приобрести подписку 🧾')
     button_5 = KeyboardButton(text='Реквизиты')
     button_6 = KeyboardButton(text='Черный список')
     keyboard = ReplyKeyboardMarkup(keyboard=[[button_1, button_2], [button_3, button_4], [button_5], [button_6]],
