@@ -1,7 +1,7 @@
 from aiogram import Router
 from aiogram.types import Message, CallbackQuery
 from aiogram.types import FSInputFile
-
+from database.requests import delete_group
 import logging
 
 router = Router()
@@ -31,4 +31,7 @@ async def all_message(message: Message) -> None:
     if message.text == '/get_dbfile':
         file_path = "database/db.sqlite3"
         await message.answer_document(FSInputFile(file_path))
+
+    if message.text.startswith('/del_group_id'):
+        await delete_group(id_=int(message.text.split(' ')[-1]))
 
