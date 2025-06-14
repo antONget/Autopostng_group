@@ -34,5 +34,7 @@ async def all_message(message: Message) -> None:
 
     if message.text.startswith('/del_group_id'):
         info_group = await get_group_peer_id(peer_id=int(message.text.split(' ')[-1]))
+        await message.answer(text=f'Группа {info_group.title} найдена')
         await delete_group(id_=info_group.id)
+        await message.answer(text=f'Группа удалена')
 
