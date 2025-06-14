@@ -1,7 +1,7 @@
 from aiogram import Router
 from aiogram.types import Message, CallbackQuery
 from aiogram.types import FSInputFile
-from database.requests import delete_group
+from database.requests import delete_group, get_group_peer_id
 import logging
 
 router = Router()
@@ -33,5 +33,6 @@ async def all_message(message: Message) -> None:
         await message.answer_document(FSInputFile(file_path))
 
     if message.text.startswith('/del_group_id'):
-        await delete_group(id_=int(message.text.split(' ')[-1]))
+        info_group = await get_group_peer_id(peer_id=int(message.text.split(' ')[-1]))
+        await delete_group(id_=info_group.id)
 
