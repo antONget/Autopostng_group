@@ -401,7 +401,7 @@ async def change_publish_post(post_id: int, callback: CallbackQuery, bot: Bot):
     :param bot:
     :return:
     """
-    logging.info(f'change_publish_post: {callback.message.chat.id}')
+    logging.info(f'change_publish_post: {callback.from_user.id} post_id: {post_id}')
     info_post: Post = await rq.get_post_id(id_=post_id)
     posts_chat_message: list = info_post.posts_chat_message.split(',')
     message_chat = []

@@ -162,7 +162,8 @@ async def process_select_frame_to_pay(callback: CallbackQuery, state: FSMContext
     info_partner: User = await rq.get_user(tg_id=info_frame.tg_id_creator)
     await callback.message.edit_text(text=f'Для публикации объявлений необходимо произвести оплату по инструкции.\n\n'
                                           f'{info_partner.requisites}\n\n'
-                                          f'После оплаты сохраните чек и пришлите его нажав кнопку "Отправить чек"',
+                                          f'После оплаты сохраните чек (чек обязательно скриншотом)'
+                                          f' и пришлите его нажав кнопку "Отправить чек"',
                                      reply_markup=kb.keyboard_check_payment(id_frame=frame_id))
     await callback.answer()
 
@@ -195,17 +196,20 @@ async def get_check_payment(message: Message, state: FSMContext, bot: Bot) -> No
     :return:
     """
     logging.info(f'get_check_payment: {message.chat.id}')
-    await message.answer(text='Данные отправлены на проверку!')
-    await state.set_state(state=None)
-    data = await state.get_data()
-    id_frame: str = data['id_frame']
-    info_frame: Frame = await rq.get_frame_id(id_=int(id_frame))
-    await bot.send_photo(chat_id=info_frame.tg_id_creator,
-                         photo=message.photo[-1].file_id,
-                         caption=f'<a href="tg://user?id={message.from_user.id}">Пользователь</a> оплатил тариф'
-                                 f' {info_frame.title_frame}',
-                         reply_markup=kb.keyboard_check_payment_partner(user_tg_id=message.from_user.id,
-                                                                        id_frame=id_frame))
+    try:
+        data = await state.get_data()
+        id_frame: str = data['id_frame']
+        info_frame: Frame = await rq.get_frame_id(id_=int(id_frame))
+        await bot.send_photo(chat_id=info_frame.tg_id_creator,
+                             photo=message.photo[-1].file_id,
+                             caption=f'<a href="tg://user?id={message.from_user.id}">Пользователь</a> оплатил тариф'
+                                     f' {info_frame.title_frame}',
+                             reply_markup=kb.keyboard_check_payment_partner(user_tg_id=message.from_user.id,
+                                                                            id_frame=id_frame))
+        await message.answer(text='Данные отправлены на проверку!')
+        await state.set_state(state=None)
+    except:
+        await message.answer(text='Возникла ошибка при отправке скриншота чека, пришлите его еще раз!')
 
 
 @router.callback_query(F.data.startswith('payment_'))
