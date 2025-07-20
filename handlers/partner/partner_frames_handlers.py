@@ -74,7 +74,7 @@ async def process_get_title_frame(message: Message, state: FSMContext, bot: Bot)
     :param bot:
     :return:
     """
-    logging.info(f'process_get_group: {message.chat.id}')
+    logging.info(f'process_get_group: {message.from_user.id}')
     title_frame = message.text
     if title_frame in ['Тарифы', 'Мои группы', 'Партнеры']:
         await message.answer(text='Добавление тарифа отменено')
@@ -95,7 +95,7 @@ async def process_get_cost_frame(message: Message, state: FSMContext, bot: Bot) 
     :param bot:
     :return:
     """
-    logging.info(f'process_get_cost_frame: {message.chat.id}')
+    logging.info(f'process_get_cost_frame: {message.from_user.id}')
     cost_frame = message.text
     if cost_frame in ['Тарифы', 'Мои группы', 'Партнеры']:
         await message.answer(text='Добавление тарифа отменено')
@@ -119,7 +119,7 @@ async def process_get_period_frame(message: Message, state: FSMContext, bot: Bot
     :param bot:
     :return:
     """
-    logging.info(f'process_get_period_frame: {message.chat.id}')
+    logging.info(f'process_get_period_frame: {message.from_user.id}')
     period_frame = message.text
     if period_frame in ['Тарифы', 'Мои группы', 'Партнеры']:
         await message.answer(text='Добавление тарифа отменено')
@@ -137,7 +137,7 @@ async def process_get_period_frame(message: Message, state: FSMContext, bot: Bot
         id_frame = await rq.add_frame(data=dict_frame)
         print(id_frame)
         await state.update_data(id_frame=id_frame)
-        list_group = await rq.get_group_partner(tg_id_partner=message.chat.id)
+        list_group = await rq.get_group_partner(tg_id_partner=message.from_user.id)
         await message.answer(text='Выберите группы для добавления в тариф',
                              reply_markup=kb.keyboards_list_group_frame(list_group=list_group,
                                                                         block=0,
@@ -157,8 +157,8 @@ async def process_forward_group(callback: CallbackQuery, state: FSMContext, bot:
     :param bot:
     :return:
     """
-    logging.info(f'process_forward_group: {callback.message.chat.id}')
-    list_group: list[Group] = await rq.get_group_partner(tg_id_partner=callback.message.chat.id)
+    logging.info(f'process_forward_group: {callback.from_user.id}')
+    list_group: list[Group] = await rq.get_group_partner(tg_id_partner=callback.from_user.id)
     count_block = len(list_group) // 6 + 1
     num_block = int(callback.data.split('_')[-1]) + 1
     if num_block == count_block:
@@ -166,12 +166,14 @@ async def process_forward_group(callback: CallbackQuery, state: FSMContext, bot:
     data = await state.get_data()
     str_id_group: Frame = await rq.get_frame_id(id_=data["id_frame"])
     list_id_group: list = str_id_group.list_id_group.split(',')
-    keyboard = kb.keyboards_list_group_frame(list_group=list_group, block=num_block, list_id_group=list_id_group)
+    keyboard = kb.keyboards_list_group_frame(list_group=list_group,
+                                             block=num_block,
+                                             list_id_group=list_id_group)
     try:
-        await callback.message.edit_text(text='Выберите группу для удаления из БД бота',
+        await callback.message.edit_text(text='Выберите группы для добавления в тариф',
                                          reply_markup=keyboard)
     except:
-        await callback.message.edit_text(text='Выбeритe группу для удаления из БД бота',
+        await callback.message.edit_text(text='Выбeрите группы для добавления в тариф',
                                          reply_markup=keyboard)
     await callback.answer()
 
@@ -187,8 +189,8 @@ async def process_back_group(callback: CallbackQuery, state: FSMContext, bot: Bo
     :param bot:
     :return:
     """
-    logging.info(f'process_back_group: {callback.message.chat.id}')
-    list_group = await rq.get_group_partner(tg_id_partner=callback.message.chat.id)
+    logging.info(f'process_back_group: {callback.from_user.id}')
+    list_group = await rq.get_group_partner(tg_id_partner=callback.from_user.id)
     count_block = len(list_group) // 6 + 1
     num_block = int(callback.data.split('_')[-1]) - 1
     if num_block < 0:
@@ -196,12 +198,14 @@ async def process_back_group(callback: CallbackQuery, state: FSMContext, bot: Bo
     data = await state.get_data()
     str_id_group: Frame = await rq.get_frame_id(id_=data["id_frame"])
     list_id_group: list = str_id_group.list_id_group.split(',')
-    keyboard = kb.keyboards_list_group_frame(list_group=list_group, block=num_block, list_id_group=list_id_group)
+    keyboard = kb.keyboards_list_group_frame(list_group=list_group,
+                                             block=num_block,
+                                             list_id_group=list_id_group)
     try:
-        await callback.message.edit_text(text='Выберите группу для удаления из БД бота',
+        await callback.message.edit_text(text='Выберите группы для добавления в тариф',
                                          reply_markup=keyboard)
     except:
-        await callback.message.edit_text(text='Выбeритe группу для удаления из БД бота',
+        await callback.message.edit_text(text='Выбeрите группы для добавления в тариф',
                                          reply_markup=keyboard)
     await callback.answer()
 
@@ -216,24 +220,22 @@ async def process_select_group(callback: CallbackQuery, state: FSMContext, bot: 
     :param bot:
     :return:
     """
-    logging.info(f'process_select_group: {callback.message.chat.id}')
+    logging.info(f'process_select_group: {callback.from_user.id}')
     id_group = callback.data.split('_')[-1]
     data = await state.get_data()
     await rq.set_frame_id(id_frame=data['id_frame'], id_group=id_group)
-    list_group: list[Group] = await rq.get_group_partner(tg_id_partner=callback.message.chat.id)
+    list_group: list[Group] = await rq.get_group_partner(tg_id_partner=callback.from_user.id)
     info_frame: Frame = await rq.get_frame_id(id_=data['id_frame'])
     str_id_group: str = info_frame.list_id_group
     list_id_group: list = str_id_group.split(',')
-    print(data['id_frame'])
-    print(list_id_group)
     keyboard = kb.keyboards_list_group_frame(list_group=list_group,
                                              block=0,
                                              list_id_group=list_id_group)
     try:
-        await callback.message.edit_text(text='Выберите группу для удаления из БД бота',
+        await callback.message.edit_text(text='Выберите группы для добавления в тариф',
                                          reply_markup=keyboard)
     except:
-        await callback.message.edit_text(text='Выбeритe группу для удаления из БД бота',
+        await callback.message.edit_text(text='Выбeрите группы для добавления в тариф',
                                          reply_markup=keyboard)
     await callback.answer()
 
@@ -248,11 +250,11 @@ async def process_confirm_attach_group_frame(callback: CallbackQuery, state: FSM
     :param bot:
     :return:
     """
-    logging.info(f'process_confirm_attach_group_frame: {callback.message.chat.id}')
+    logging.info(f'process_confirm_attach_group_frame: {callback.from_user.id}')
     await state.set_state(state=None)
     data = await state.get_data()
     info_frame: Frame = await rq.get_frame_id(id_=data['id_frame'])
-    print(info_frame.list_id_group)
+
     if not info_frame.list_id_group:
         await callback.answer(text=f'Тариф не может быть пустым, добавьте хотя бы одну группу',
                               show_alert=True)
@@ -317,7 +319,7 @@ async def process_frame_forward(callback: CallbackQuery, state: FSMContext, bot:
     :param bot:
     :return:
     """
-    logging.info(f'process_frame_forward: {callback.message.chat.id}')
+    logging.info(f'process_frame_forward: {callback.from_user.id}')
     data = await state.get_data()
     action_frame = data['action_frame']
     if action_frame == 'edit':
@@ -350,7 +352,7 @@ async def process_frame_back(callback: CallbackQuery, state: FSMContext, bot: Bo
     :param bot:
     :return:
     """
-    logging.info(f'process_frame_back: {callback.message.chat.id}')
+    logging.info(f'process_frame_back: {callback.from_user.id}')
     data = await state.get_data()
     action_frame = data['action_frame']
     if action_frame == 'edit':
@@ -382,7 +384,7 @@ async def process_select_delete_frame(callback: CallbackQuery, state: FSMContext
     :param bot:
     :return:
     """
-    logging.info(f'process_select_delete_frame: {callback.message.chat.id}')
+    logging.info(f'process_select_delete_frame: {callback.from_user.id}')
     data = await state.get_data()
     action_frame = data['action_frame']
     id_frame = callback.data.split('_')[-1]

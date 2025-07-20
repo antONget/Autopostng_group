@@ -14,7 +14,7 @@ from handlers.admin import admin_handlers, ban, unban
 from handlers.partner import partner_handlers, partner_requisites_handlers, partner_group_handlers, \
     partner_frames_handlers
 from handlers.user import user_subscribe_frame_handlers, user_posting_handlers, \
-    user_post_delete_handlers, user_post_edit_handlers
+    user_post_delete_handlers, user_post_edit_handlers, my_publish_handlers, my_autoposting_handlers
 from handlers import start_handlers, other_handlers
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from database.models import async_main
@@ -30,8 +30,8 @@ async def main():
     # Конфигурируем логирование
     logging.basicConfig(
         level=logging.INFO,
-        filename="py_log.log",
-        filemode='w',
+        # filename="py_log.log",
+        # filemode='w',
         format='%(filename)s:%(lineno)d #%(levelname)-8s '
                '[%(asctime)s] - %(name)s - %(message)s')
 
@@ -58,10 +58,11 @@ async def main():
                        partner_frames_handlers.router)
     dp.include_routers(user_subscribe_frame_handlers.router,
                        user_posting_handlers.router,
-                       user_post_delete_handlers.router,
-                       user_post_edit_handlers.router)
+                       my_publish_handlers.router,
+                       my_autoposting_handlers.router)
     dp.include_router(other_handlers.router)
     # dp.message.middleware(SchedulerMiddleware())
+
     @dp.error()
     async def error_handler(event: ErrorEvent, data: Dict[str, Any]):
         logger.critical("Критическая ошибка: %s", event.exception, exc_info=True)

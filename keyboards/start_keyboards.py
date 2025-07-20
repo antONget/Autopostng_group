@@ -8,11 +8,13 @@ def keyboard_main_admin() -> ReplyKeyboardMarkup:
     button_2 = KeyboardButton(text='Тарифы')
     button_3 = KeyboardButton(text='Создать пост ✏️')
     button_4 = KeyboardButton(text='Приобрести подписку 🧾')
+    button_8 = KeyboardButton(text='Опубликованные посты 📝')
     button_5 = KeyboardButton(text='Реквизиты')
     button_6 = KeyboardButton(text='Партнеры')
     button_7 = KeyboardButton(text='Черный список')
     keyboard = ReplyKeyboardMarkup(keyboard=[[button_1, button_2],
                                              [button_3, button_4],
+                                             [button_8],
                                              [button_5, button_6],
                                              [button_7]],
                                    resize_keyboard=True)
@@ -25,9 +27,13 @@ def keyboard_main_partner() -> ReplyKeyboardMarkup:
     button_2 = KeyboardButton(text='Тарифы')
     button_3 = KeyboardButton(text='Создать пост ✏️')
     button_4 = KeyboardButton(text='Приобрести подписку 🧾')
+    button_7 = KeyboardButton(text='Опубликованные посты 📝')
     button_5 = KeyboardButton(text='Реквизиты')
     button_6 = KeyboardButton(text='Черный список')
-    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1, button_2], [button_3, button_4], [button_5], [button_6]],
+    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1, button_2],
+                                             [button_3, button_4],
+                                             [button_7],
+                                             [button_5], [button_6]],
                                    resize_keyboard=True)
     return keyboard
 
@@ -36,9 +42,10 @@ def keyboard_main_manager() -> ReplyKeyboardMarkup:
     logging.info("keyboard_main_manager")
     button_1 = KeyboardButton(text='Приобрести подписку 🧾')
     button_2 = KeyboardButton(text='Создать пост ✏️')
-    button_3 = KeyboardButton(text='Редактировать пост 🗒')
-    button_4 = KeyboardButton(text='Удалить пост ❌')
-    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_3], [button_4]],
+    button_3 = KeyboardButton(text='Опубликованные посты 📝')
+    # button_3 = KeyboardButton(text='Редактировать пост 🗒')
+    # button_4 = KeyboardButton(text='Удалить пост ❌')
+    keyboard = ReplyKeyboardMarkup(keyboard=[[button_1], [button_2], [button_3]],
                                    resize_keyboard=True)
     return keyboard
 

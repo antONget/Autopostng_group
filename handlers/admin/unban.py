@@ -19,5 +19,5 @@ async def func_unban(message: Message, bot: Bot):
         await message.reply("Для использования команды /unban бот должен быть администратором в канале,"
                             " а вы администратором или владельцем")
         return
-    await bot.unban_chat_member(chat_id=message.chat.id, user_id=reply_message.from_user.id, only_if_banned=True)
+    await bot.unban_chat_member(chat_id=message.from_user.id, user_id=reply_message.from_user.id, only_if_banned=True)
     await message.answer(" Блокировка была снята")

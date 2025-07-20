@@ -107,7 +107,7 @@ async def publish_post_task(id_post: int, user_tg_id: int, bot: Bot):
         group: Group = await rq.get_group_id(id_=group_id)
         if not group:
             continue
-        bot_ = await bot.get_chat_member(group.group_id, bot.id)
+        bot_ = await bot.get_chat_member(chat_id=group.group_id, user_id=bot.id)
         if bot_.status != ChatMemberStatus.ADMINISTRATOR:
             await bot.send_message(chat_id=user_tg_id,
                                    text=f'Бот не может опубликовать пост в группу <b>{group.title}</b>'
@@ -174,12 +174,15 @@ async def scheduler_restricted(bot: Bot):
             for item in info_frame.list_id_group.split(','):
                 group_info: Group = await rq.get_group_id(id_=item)
                 if group_info:
-                    await bot.restrict_chat_member(
-                        chat_id=group_info.group_id,
-                        user_id=int(subscribe.tg_id),
-                        until_date=datetime.now() + timedelta(seconds=10),
-                        permissions=ChatPermissions(
-                            can_send_messages=False,
-                            can_send_media_messages=False
+                    try:
+                        await bot.restrict_chat_member(
+                            chat_id=group_info.group_id,
+                            user_id=int(subscribe.tg_id),
+                            until_date=datetime.now() + timedelta(seconds=10),
+                            permissions=ChatPermissions(
+                                can_send_messages=False,
+                                can_send_media_messages=False
+                            )
                         )
-                    )
+                    except:
+                        logging.info('ERROR: bot.restrict_chat_member')

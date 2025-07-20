@@ -7,6 +7,7 @@ from aiogram.enums.chat_member_status import ChatMemberStatus
 from aiogram.exceptions import TelegramBadRequest
 from utils.error_handling import error_handler
 from database import requests as rq
+from database.models import Group
 from keyboards.partner import partner_group_keyboards as kb
 from filter.admin_filter import IsSuperAdmin
 from filter.user_filter import IsRolePartner
@@ -59,7 +60,7 @@ async def select_change_group(callback: CallbackQuery, state: FSMContext, bot: B
         await callback.answer()
         return
     elif select == 'del':
-        list_group = await rq.get_group_partner(tg_id_partner=callback.message.chat.id)
+        list_group: list[Group] = await rq.get_group_partner(tg_id_partner=callback.from_user.id)
         if list_group:
             await callback.message.edit_text(text='Выберите группу для удаления из БД бота',
                                              reply_markup=kb.keyboards_list_group(list_group=list_group, block=0))
@@ -78,7 +79,7 @@ async def process_get_group(message: Message, state: FSMContext, bot: Bot) -> No
     :param bot:
     :return:
     """
-    logging.info(f'process_get_group: {message.chat.id}')
+    logging.info(f'process_get_group: {message.from_user.id}')
     if message.text in ['Тарифы', 'Мои группы', 'Партнеры']:
         await state.set_state(state=None)
         await message.answer(text='Добавление группы отменено')
@@ -92,7 +93,7 @@ async def process_get_group(message: Message, state: FSMContext, bot: Bot) -> No
                                   ' /id@FIND_MY_ID_BOT')
         return
     try:
-        bot = await bot.get_chat_member(group_id, bot.id)
+        bot = await bot.get_chat_member(chat_id=group_id, user_id=bot.id)
         if bot.status == ChatMemberStatus.ADMINISTRATOR:
             await message.answer(text='Отлично! Бот уже состоит в администраторах группы')
         else:
@@ -118,7 +119,7 @@ async def process_get_group_title(message: Message, state: FSMContext, bot: Bot)
     :param bot:
     :return:
     """
-    logging.info(f'process_get_group_title: {message.chat.id}')
+    logging.info(f'process_get_group_title: {message.from_user.id}')
     group_title = message.text
     if group_title in ['Опубликовать пост', 'Менеджеры', 'Мои группы', 'Партнеры']:
         await message.answer(text='Добавление группы отменено')
@@ -146,8 +147,8 @@ async def process_forward_group(callback: CallbackQuery, state: FSMContext, bot:
     :param bot:
     :return:
     """
-    logging.info(f'process_forward_group: {callback.message.chat.id}')
-    list_group = await rq.get_group_partner(tg_id_partner=callback.message.chat.id)
+    logging.info(f'process_forward_group: {callback.from_user.id}')
+    list_group = await rq.get_group_partner(tg_id_partner=callback.from_user.id)
     count_block = len(list_group) // 6 + 1
     num_block = int(callback.data.split('_')[-1]) + 1
     if num_block == count_block:
@@ -173,8 +174,8 @@ async def process_back_group(callback: CallbackQuery, state: FSMContext, bot: Bo
     :param bot:
     :return:
     """
-    logging.info(f'process_back_group: {callback.message.chat.id}')
-    list_group = await rq.get_group_partner(tg_id_partner=callback.message.chat.id)
+    logging.info(f'process_back_group: {callback.from_user.id}')
+    list_group = await rq.get_group_partner(tg_id_partner=callback.from_user.id)
     count_block = len(list_group) // 6 + 1
     num_block = int(callback.data.split('_')[-1]) - 1
     if num_block < 0:
@@ -199,7 +200,7 @@ async def process_select_group(callback: CallbackQuery, state: FSMContext, bot: 
     :param bot:
     :return:
     """
-    logging.info(f'process_select_group: {callback.message.chat.id}')
+    logging.info(f'process_select_group: {callback.from_user.id}')
     await state.set_state(state=None)
     id_group = int(callback.data.split('_')[-1])
     await rq.delete_group(id_=id_group)

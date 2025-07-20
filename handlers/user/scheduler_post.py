@@ -12,7 +12,7 @@ from datetime import datetime
 
 async def get_user_group_for_publish(user_tg_id: int, bot: Bot) -> str:
     """
-    Менеджер выбирает группу
+    Получаем список групп в которых пользователь имеет право публиковать посты
     :param user_tg_id:
     :param bot:
     :return:
@@ -103,11 +103,12 @@ async def publish_post(id_post: int, callback: CallbackQuery, bot: Bot):
                  f'{callback.from_user.username}</a>\n' \
                  f'Создано заказов {info_user.count_order}\n' \
                  f'Зарегистрирован {count_day} день назад\n\n'
+    check_publish = False
     for i, group_id in enumerate(list_ids_group):
         group: Group = await rq.get_group_id(id_=group_id)
         if not group:
             continue
-        bot_ = await bot.get_chat_member(group.group_id, bot.id)
+        bot_ = await bot.get_chat_member(chat_id=group.group_id, user_id=bot.id)
         if bot_.status != ChatMemberStatus.ADMINISTRATOR:
             await callback.message.answer(text=f'Бот не может опубликовать пост в группу <b>{group.title}</b>'
                                                f' так как не является администратором, обратитесь к'
@@ -130,13 +131,15 @@ async def publish_post(id_post: int, callback: CallbackQuery, bot: Bot):
                                               reply_markup=keyboard_post_link_manager_and_location(
                                                   user_tg_id=callback.from_user.id,
                                                   location=info_post.post_location))
+            check_publish = True
             message_chat.append(f'{group.group_id}!{post.message_id}')
             await callback.message.answer(text=f'Пост опубликован в группе {group.title}')
     await callback.message.answer(text=f'Публикация поста по списку групп завершена',
                                   reply_markup=None)
-    posts_chat_message = ','.join(message_chat)
-    await rq.set_post_posts_chat_message_id(id_post=id_post,
-                                            posts_chat_message=posts_chat_message)
-    await rq.set_post_status(id_post=id_post,
-                             status=rq.StatusPost.publish)
-    await rq.set_count_order_user(id_user=callback.from_user.id)
+    if check_publish:
+        posts_chat_message = ','.join(message_chat)
+        await rq.set_post_posts_chat_message_id(id_post=id_post,
+                                                posts_chat_message=posts_chat_message)
+        await rq.set_post_status(id_post=id_post,
+                                 status=rq.StatusPost.publish)
+        await rq.set_count_order_user(id_user=callback.from_user.id)

@@ -71,7 +71,7 @@ async def process_get_title_frame(message: Message, state: FSMContext, bot: Bot)
     :param bot:
     :return:
     """
-    logging.info(f'process_get_group: {message.chat.id}')
+    logging.info(f'process_get_group: {message.from_user.id}')
     title_requisites = message.text
     if title_requisites in ['Тарифы', 'Мои группы', 'Партнеры', 'Реквизиты']:
         await message.answer(text='Добавление реквизитов отменено')

@@ -38,7 +38,7 @@ def error_handler(func):
             # Лог ошибки
             # logs.error(f"Ошибка у пользователя {message.from_user.id if message else ''}.\nОшибка в функции {func_name} ({func_doc}):\n{str(e)}\n{error_traceback}")
             await bot.send_message(chat_id=config.tg_bot.support_id,
-                                   text=f"Ошибка у пользователя {message.from_user.id if message else ''}.\n"
+                                   text=f"Ошибка у пользователя {message.chat.id if message else ''}.\n"
                                         f"Ошибка в функции {func_name} ({func_doc}):\n"
                                         f"{str(e)}\n"
                                         f"{error_traceback}")

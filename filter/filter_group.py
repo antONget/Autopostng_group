@@ -6,8 +6,8 @@ import re
 
 
 async def is_admin(message: Message, bot: Bot):
-    member = await bot.get_chat_member(message.chat.id, message.from_user.id)
-    bot = await bot.get_chat_member(message.chat.id, bot.id)
+    member = await bot.get_chat_member(chat_id=message.chat.id, user_id=message.from_user.id)
+    bot = await bot.get_chat_member(chat_id=message.chat.id, user_id=bot.id)
     if member.status not in [ChatMemberStatus.ADMINISTRATOR, ChatMemberStatus.CREATOR] or bot.status != ChatMemberStatus.ADMINISTRATOR:
         return False
     return True
@@ -15,7 +15,7 @@ async def is_admin(message: Message, bot: Bot):
 
 async def is_admin_bot_in_group(group_peer_id: int, bot: Bot):
     try:
-        bot = await bot.get_chat_member(group_peer_id, bot.id)
+        bot = await bot.get_chat_member(chat_id=group_peer_id, user_id=bot.id)
         if bot.status != ChatMemberStatus.ADMINISTRATOR:
             return False
         return True

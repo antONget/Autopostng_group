@@ -116,7 +116,7 @@ async def set_role_user(id_user: int, role: str) -> None:
 
 async def set_count_order_user(id_user: int) -> None:
     """
-    Обновляем роль пользователя
+    Обновляем количество опубликованных заявок
     :return:
     """
     logging.info(f'set_count_order_user {id_user}')
@@ -506,6 +506,48 @@ async def get_post_manager_satus(tg_id_manager: int, status: str) -> list[Post]:
                                             date_format) - datetime.strptime(post.post_date_create,
                                                                              date_format))
             if delta_time.seconds < 60*60*47:
+                list_posts.append(post)
+        return list_posts
+
+
+async def get_posts_manager_last_day(tg_id_manager: int) -> list[Post]:
+    """
+    Получаем список постов менеджера за текущие сутки
+    :param tg_id_manager:
+    :return:
+    """
+    logging.info(f'get_posts_manager_last_day')
+    async with async_session() as session:
+        posts: list[Post] = await session.scalars(select(Post).filter(Post.tg_id_manager == tg_id_manager,
+                                                                      Post.status == StatusPost.publish))
+        date_format = '%d-%m-%Y %H:%M'
+        current_date = datetime.now()
+        year = current_date.year
+        month = current_date.month
+        day = current_date.day
+        start_current_day = datetime(year=year, month=month, day=day, hour=0, minute=0)
+        list_posts = []
+        for post in posts:
+            delta_time = (datetime.strptime(post.post_date_create, date_format) -
+                          start_current_day)
+            if 0 < delta_time.total_seconds() < 24*60*60:
+                list_posts.append(post)
+        return list_posts
+
+
+async def get_posts_active_autoposting(tg_id_manager: int) -> list[Post]:
+    """
+    Получаем список постов c активным автопостингом
+    :param tg_id_manager:
+    :return:
+    """
+    logging.info(f'get_posts_manager_last_day')
+    async with async_session() as session:
+        posts: list[Post] = await session.scalars(select(Post).filter(Post.tg_id_manager == tg_id_manager,
+                                                                      Post.status == StatusPost.publish))
+        list_posts = []
+        for post in posts:
+            if post.post_autopost_1 or post.post_autopost_2 or post.post_autopost_3:
                 list_posts.append(post)
         return list_posts
 

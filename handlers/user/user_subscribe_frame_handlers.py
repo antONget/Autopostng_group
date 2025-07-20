@@ -34,7 +34,11 @@ async def process_select_group_manager(message: Message, bot: Bot) -> None:
     logging.info('process_select_group_manager')
     list_groups: list = await rq.get_group_partner_not(tg_id_partner=message.from_user.id)
     if list_groups:
-        await message.answer(text='Подберите для себя группу для размещения в ней заявок',
+        link_group = ''
+        for group in list_groups[0 * 6:(0 + 1) * 6]:
+            link_group += f'{group.title}\n'
+        await message.answer(text=f'Подберите для себя группу для размещения в ней заявок: \n\n'
+                                  f'{link_group}',
                              reply_markup=kb.keyboards_list_group(list_group=list_groups,
                                                                   block=0))
     else:
@@ -52,19 +56,24 @@ async def process_forward_group(callback: CallbackQuery, state: FSMContext, bot:
     :param bot:
     :return:
     """
-    logging.info(f'process_forward_group: {callback.message.chat.id}')
-    list_groups: list = await rq.get_group_partner_not(tg_id_partner=callback.from_user.id)
+    logging.info(f'process_forward_group: {callback.from_user.id}')
+    list_groups: list[Group] = await rq.get_group_partner_not(tg_id_partner=callback.from_user.id)
     count_block = len(list_groups) // 6 + 1
     num_block = int(callback.data.split('_')[-1]) + 1
     if num_block == count_block:
         num_block = 0
     keyboard = kb.keyboards_list_group(list_group=list_groups,
                                        block=num_block)
+    link_group = ''
+    for group in list_groups[num_block * 6:(num_block + 1) * 6]:
+        link_group += f'{group.title}\n'
     try:
-        await callback.message.edit_text(text='Подберите для себя группу для размещения в ней заявок',
+        await callback.message.edit_text(text=f'Подберите для себя группу для размещения в ней заявок: \n\n'
+                                              f'{link_group}',
                                          reply_markup=keyboard)
     except:
-        await callback.message.edit_text(text='Подберитe для себя группу для размещения в ней заявок',
+        await callback.message.edit_text(text='Подберитe для себя группу для размещения в ней заявок: \n\n'
+                                              f'{link_group}',
                                          reply_markup=keyboard)
     await callback.answer()
 
@@ -80,7 +89,7 @@ async def process_back_manager(callback: CallbackQuery, state: FSMContext, bot: 
     :param bot:
     :return:
     """
-    logging.info(f'process_back_manager: {callback.message.chat.id}')
+    logging.info(f'process_back_manager: {callback.from_user.id}')
     list_groups: list = await rq.get_group_partner_not(tg_id_partner=callback.from_user.id)
     count_block = len(list_groups) // 6 + 1
     num_block = int(callback.data.split('_')[-1]) - 1
@@ -88,11 +97,16 @@ async def process_back_manager(callback: CallbackQuery, state: FSMContext, bot: 
         num_block = count_block - 1
     keyboard = kb.keyboards_list_group(list_group=list_groups,
                                        block=num_block)
+    link_group = ''
+    for group in list_groups[num_block * 6:(num_block + 1) * 6]:
+        link_group += f'{group.title}\n'
     try:
-        await callback.message.edit_text(text='Подберите для себя группу для размещения в ней заявок',
+        await callback.message.edit_text(text='Подберите для себя группу для размещения в ней заявок: \n\n'
+                                              f'{link_group}',
                                          reply_markup=keyboard)
     except:
-        await callback.message.edit_text(text='Подберитe для себя группу для размещения в ней заявок',
+        await callback.message.edit_text(text='Подберитe для себя группу для размещения в ней заявок: \n\n'
+                                              f'{link_group}',
                                          reply_markup=keyboard)
     await callback.answer()
 
@@ -107,7 +121,7 @@ async def process_select_group(callback: CallbackQuery, state: FSMContext, bot: 
     :param bot:
     :return:
     """
-    logging.info(f'process_select_group: {callback.message.chat.id}')
+    logging.info(f'process_select_group: {callback.from_user.id}')
     group_id = int(callback.data.split('_')[-1])
     frames: list[Frame] = await rq.get_frames()
     group_in_frame: list[Frame] = []
@@ -156,7 +170,7 @@ async def process_select_frame_to_pay(callback: CallbackQuery, state: FSMContext
     :param bot:
     :return:
     """
-    logging.info(f'process_select_frame_to_pay: {callback.message.chat.id}')
+    logging.info(f'process_select_frame_to_pay: {callback.from_user.id}')
     frame_id: int = int(callback.data.split('_')[-1])
     info_frame: Frame = await rq.get_frame_id(id_=frame_id)
     info_partner: User = await rq.get_user(tg_id=info_frame.tg_id_creator)
@@ -178,7 +192,7 @@ async def process_get_check(callback: CallbackQuery, state: FSMContext, bot: Bot
     :param bot:
     :return:
     """
-    logging.info(f'process_get_check: {callback.message.chat.id}')
+    logging.info(f'process_get_check: {callback.from_user.id}')
     await callback.message.edit_text(text='Отправьте чек об оплате')
     await state.update_data(id_frame=callback.data.split('_')[-1])
     await state.set_state(ManagerState.check_pay)
@@ -195,7 +209,7 @@ async def get_check_payment(message: Message, state: FSMContext, bot: Bot) -> No
     :param bot:
     :return:
     """
-    logging.info(f'get_check_payment: {message.chat.id}')
+    logging.info(f'get_check_payment: {message.from_user.id}')
     try:
         data = await state.get_data()
         id_frame: str = data['id_frame']
@@ -222,7 +236,7 @@ async def process_confirm_cancel_payment(callback: CallbackQuery, state: FSMCont
     :param bot:
     :return:
     """
-    logging.info(f'process_get_check: {callback.message.chat.id}')
+    logging.info(f'process_get_check: {callback.from_user.id}')
     payment: str = callback.data.split('_')[-3]
     user_tg_id: str = callback.data.split('_')[-2]
     id_frame: str = callback.data.split('_')[-1]

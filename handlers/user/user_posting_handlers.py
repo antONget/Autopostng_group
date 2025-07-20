@@ -47,6 +47,7 @@ async def user_group_for_publish(message: Message, state: FSMContext, bot: Bot) 
     subscribes: list[Subscribe] = await rq.get_subscribes_user(tg_id=message.from_user.id)
     active_subscribe = False
     list_active_subscribe = []
+    # проверка на текущие активные подписки
     if subscribes:
         for subscribe in subscribes:
             date_format = '%d-%m-%Y %H:%M'
@@ -60,9 +61,11 @@ async def user_group_for_publish(message: Message, state: FSMContext, bot: Bot) 
     if await check_role(tg_id=message.from_user.id,
                         role=rq.UserRole.admin) or await check_role(tg_id=message.from_user.id,
                                                                     role=rq.UserRole.partner):
+        # проходим по оплаченным активным тарифам и формируем список групп для возможности публикации объявлений в них
         text = ''
         str_group_ids = ''
         for active_subscribe in list_active_subscribe:
+            # если партнер заблокирован во всех группах бота, то прерываем проход по тприфам
             if await rq.get_blacklist_group_all(tg_id=message.from_user.id):
                 await message.answer(text='Вы заблокированы во всех группа бота, кроме своих')
                 break
@@ -84,6 +87,7 @@ async def user_group_for_publish(message: Message, state: FSMContext, bot: Bot) 
             if not await rq.get_blacklist_group(tg_id_partner=info_frame.tg_id_creator,
                                                 tg_id=message.from_user.id):
                 str_group_ids += active_subscribe.group_id_list
+        # получаем список групп пользователя и выводим список его групп
         groups_partner: list[Group] = await rq.get_group_partner(tg_id_partner=message.from_user.id)
         self_group_text = f'Группы в которых вы можете размещать заявки:\n'
         count = 0
@@ -92,11 +96,17 @@ async def user_group_for_publish(message: Message, state: FSMContext, bot: Bot) 
             str_group_ids += f',{group.id}'
             self_group_text += f'{count}. <b>{group.title}</b>\n'
         await state.update_data(str_group_ids=str_group_ids)
+        #!!! await message.answer(text=f'{text}\n\n{self_group_text}',
+        #                      reply_markup=kb.keyboard_user_publish())
         await message.answer(text=f'{text}\n\n{self_group_text}',
-                             reply_markup=kb.keyboard_user_publish())
+                             reply_markup=kb.keyboard_user_publish_new())
     else:
+        # пользователь не является администратором или партнером
+        # если нет активных подписок у пользователя
         if not subscribes or not active_subscribe:
+            # получаем список групп для покупки подписки
             list_groups: list = await rq.get_group_partner_not(tg_id_partner=message.from_user.id)
+            # предлагаем ему приобрести один из тарифов
             if list_groups:
                 await message.answer(text='У вас нет активных подписок, выберите группу и продлите подписку',
                                      reply_markup=kb.keyboards_list_group(list_group=list_groups,
@@ -104,6 +114,7 @@ async def user_group_for_publish(message: Message, state: FSMContext, bot: Bot) 
             else:
                 await message.answer(text='Пока в бота не добавлены группы, в которых вы могли приобрести подписки')
         else:
+            # проходим по списку активных подписок
             text = ''
             str_group_ids = ''
             for active_subscribe in list_active_subscribe:
@@ -115,6 +126,7 @@ async def user_group_for_publish(message: Message, state: FSMContext, bot: Bot) 
                         f'Подписка до: <b>{active_subscribe.date_completion}</b>\n' \
                         f'Группы в которых вы можете размещать заявки:\n'
                 count = 0
+                # получаем список групп в тарифе, и отмечаем группы в которых пользователь заблокирован
                 for group_id in active_subscribe.group_id_list.split(','):
                     if group_id.isdigit():
                         group: Group = await rq.get_group_id(id_=int(group_id))
@@ -150,7 +162,7 @@ async def process_publish_post(callback: CallbackQuery, state: FSMContext, bot: 
     :param bot:
     :return:
     """
-    logging.info(f'process_publish_post: {callback.message.chat.id}')
+    logging.info(f'process_publish_post: {callback.from_user.id}')
     subscribes: list[Subscribe] = await rq.get_subscribes_user(tg_id=callback.from_user.id)
     active_subscribe = False
     list_active_subscribe = []
@@ -223,60 +235,18 @@ async def get_text_post(message: Message, state: FSMContext, bot: Bot):
     :param bot:
     :return:
     """
-    logging.info(f'get_text_post: {message.chat.id}')
+    logging.info(f'get_text_post: {message.from_user.id}')
     if message.text in ['Приобрести подписку 🧾', 'Создать пост ✏️', 'Редактировать пост 🗒', 'Удалить пост ❌']:
         await message.answer(text='Создание поста отменено')
         await state.set_state(state=None)
         return
     await state.update_data(text_post=message.html_text)
-    await message.answer(text='Пришлите ссылку на местоположение',
-                         reply_markup=kb.keyboard_pass_location())
-    await state.set_state(ManagerState.location)
-
-
-@router.message(F.text, StateFilter(ManagerState.location))
-@error_handler
-async def get_location(message: Message, state: FSMContext, bot: Bot):
-    """
-    Получаем локацию
-    :param message:
-    :param state:
-    :param bot:
-    :return:
-    """
-    logging.info(f'get_text_post: {message.chat.id}')
-    if not validators.url(message.text):
-        await message.answer(text='Ссылка не валидна, проверьте правильность введенных данных')
-        return
-    await state.update_data(location=message.text)
-    data = await state.get_data()
-    data_ = {'tg_id_manager': message.chat.id,
-             'posts_text': data['text_post'],
-             'post_location': message.text,
-             'post_date_create': datetime.now().strftime('%d-%m-%Y %H:%M'),
-             'status': rq.StatusPost.create}
-    post_id: int = await rq.add_post(data=data_)
-    await state.update_data(post_id=post_id)
-    preview = 'Предпросмотр поста для публикации:\n\n'
-    await message.answer(text=f"{preview}{data['text_post']}",
-                         reply_markup=kb.keyboard_show_post(manager_tg_id=message.chat.id, location=message.text))
-    await state.set_state(state=None)
-
-
-@router.callback_query(F.data == 'pass_location')
-@error_handler
-async def process_pass_location(callback: CallbackQuery, state: FSMContext, bot: Bot):
-    """
-    Публикация поста
-    :param callback: int(callback.data.split('_')[1]) номер блока для вывода
-    :param state:
-    :param bot:
-    :return:
-    """
-    logging.info(f'process_publish_post: {callback.message.chat.id}')
+    # await message.answer(text='Пришлите ссылку на местоположение',
+    #                      reply_markup=kb.keyboard_pass_location())
+    # await state.set_state(ManagerState.location)
     await state.update_data(location='')
     data = await state.get_data()
-    data_ = {'tg_id_manager': callback.message.chat.id,
+    data_ = {'tg_id_manager': message.from_user.id,
              'posts_text': data['text_post'],
              'post_location': '',
              'post_date_create': datetime.now().strftime('%d-%m-%Y %H:%M'),
@@ -284,14 +254,69 @@ async def process_pass_location(callback: CallbackQuery, state: FSMContext, bot:
     post_id: int = await rq.add_post(data=data_)
     await state.update_data(post_id=post_id)
     preview = 'Предпросмотр поста для публикации:\n\n'
-    try:
-        await callback.message.edit_text(text=f"{preview}{data['text_post']}",
-                                         reply_markup=kb.keyboard_show_post_(user_tg_id=callback.from_user.id))
-    except:
-        await callback.message.edit_text(text=f"{preview}{data['text_post']}.",
-                                         reply_markup=kb.keyboard_show_post_(user_tg_id=callback.from_user.id))
+    await message.answer(text=f"{preview}{data['text_post']}",
+                         reply_markup=kb.keyboard_show_post_(user_tg_id=message.from_user.id))
     await state.set_state(state=None)
-    await callback.answer()
+
+
+# @router.message(F.text, StateFilter(ManagerState.location))
+# @error_handler
+# async def get_location(message: Message, state: FSMContext, bot: Bot):
+#     """
+#     Получаем локацию
+#     :param message:
+#     :param state:
+#     :param bot:
+#     :return:
+#     """
+#     logging.info(f'get_text_post: {message.from_user.id}')
+#     if not validators.url(message.text):
+#         await message.answer(text='Ссылка не валидна, проверьте правильность введенных данных')
+#         return
+#     await state.update_data(location=message.text)
+#     data = await state.get_data()
+#     data_ = {'tg_id_manager': message.from_user.id,
+#              'posts_text': data['text_post'],
+#              'post_location': message.text,
+#              'post_date_create': datetime.now().strftime('%d-%m-%Y %H:%M'),
+#              'status': rq.StatusPost.create}
+#     post_id: int = await rq.add_post(data=data_)
+#     await state.update_data(post_id=post_id)
+#     preview = 'Предпросмотр поста для публикации:\n\n'
+#     await message.answer(text=f"{preview}{data['text_post']}",
+#                          reply_markup=kb.keyboard_show_post(manager_tg_id=message.from_user.id, location=message.text))
+#     await state.set_state(state=None)
+#
+#
+# @router.callback_query(F.data == 'pass_location')
+# @error_handler
+# async def process_pass_location(callback: CallbackQuery, state: FSMContext, bot: Bot):
+#     """
+#     Публикация поста
+#     :param callback: int(callback.data.split('_')[1]) номер блока для вывода
+#     :param state:
+#     :param bot:
+#     :return:
+#     """
+#     logging.info(f'process_publish_post: {callback.from_user.id}')
+#     await state.update_data(location='')
+#     data = await state.get_data()
+#     data_ = {'tg_id_manager': callback.from_user.id,
+#              'posts_text': data['text_post'],
+#              'post_location': '',
+#              'post_date_create': datetime.now().strftime('%d-%m-%Y %H:%M'),
+#              'status': rq.StatusPost.create}
+#     post_id: int = await rq.add_post(data=data_)
+#     await state.update_data(post_id=post_id)
+#     preview = 'Предпросмотр поста для публикации:\n\n'
+#     try:
+#         await callback.message.edit_text(text=f"{preview}{data['text_post']}",
+#                                          reply_markup=kb.keyboard_show_post_(user_tg_id=callback.from_user.id))
+#     except:
+#         await callback.message.edit_text(text=f"{preview}{data['text_post']}.",
+#                                          reply_markup=kb.keyboard_show_post_(user_tg_id=callback.from_user.id))
+#     await state.set_state(state=None)
+#     await callback.answer()
 
 
 @router.callback_query(F.data == 'publishpost')
@@ -314,59 +339,6 @@ async def publish_post_press_button(callback: CallbackQuery, state: FSMContext, 
     except:
         await callback.message.edit_text(text='Пост успешно опубликован.',
                                          reply_markup=None)
-    # str_group_ids: str = data['str_group_ids']
-    # list_ids_group: list = list(set(str_group_ids.split(',')))
-    # message_chat = []
-    # posts = await rq.get_posts()
-    # count_posts = len([post for post in posts])
-    # post_managers = await rq.get_post_manager(tg_id_manager=callback.from_user.id)
-    # count_post_manager = len([post for post in post_managers])
-    # info_user: User = await rq.get_user(tg_id=callback.from_user.id)
-    # data_reg = info_user.data_reg
-    # current_date = datetime.now()
-    # data_reg_datetime = datetime(year=int(data_reg.split('-')[-1]),
-    #                              month=int(data_reg.split('-')[1]),
-    #                              day=int(data_reg.split('-')[0]))
-    # count_day = (current_date - data_reg_datetime).days
-    # info_autor = f'№ {count_posts} 👉 <a href="tg://user?id={callback.from_user.id}">{callback.from_user.username}</a>\n' \
-    #              f'Создано заказов {count_post_manager}\n' \
-    #              f'Зарегистрирован {count_day} день назад\n\n'
-    # for i, group_id in enumerate(list_ids_group):
-    #     group: Group = await rq.get_group_id(id_=group_id)
-    #     if not group:
-    #         continue
-    #     bot_ = await bot.get_chat_member(group.group_id, bot.id)
-    #     if bot_.status != ChatMemberStatus.ADMINISTRATOR:
-    #         await callback.message.answer(text=f'Бот не может опубликовать пост в группу <b>{group.title}</b>'
-    #                                            f' так как не является администратором, обратитесь к'
-    #                                            f' <a href="tg://user?id={group.tg_id_partner}">владельцу</a> ')
-    #     else:
-    #         if not data['location']:
-    #             post = await bot.send_message(chat_id=group.group_id,
-    #                                           text=f"{info_autor}{data['text_post']}\n"
-    #                                                f"По всем вопросам пишите <a href='tg://user?id="
-    #                                                f"{callback.from_user.id}'>"
-    #                                                f"{callback.from_user.username}</a>",
-    #                                           reply_markup=kb.keyboard_post_(
-    #                                               user_tg_id=callback.message.chat.id))
-    #         else:
-    #             post = await bot.send_message(chat_id=group.group_id,
-    #                                           text=f"{info_autor}{data['text_post']}\n"
-    #                                                f"По всем вопросам пишите <a href='tg://user?id="
-    #                                                f"{callback.from_user.id}'>"
-    #                                                f"{callback.from_user.username}</a>",
-    #                                           reply_markup=kb.keyboard_post(
-    #                                               user_tg_id=callback.message.chat.id,
-    #                                               location=data['location']))
-    #         message_chat.append(f'{group.group_id}!{post.message_id}')
-    #         await callback.message.answer(text=f'Пост опубликован в группе {group.title}')
-    # await callback.message.edit_text(text=f'Публикация поста по списку групп завершена',
-    #                                  reply_markup=None)
-    # posts_chat_message = ','.join(message_chat)
-    # await rq.set_post_posts_chat_message_id(id_post=data['post_id'],
-    #                                         posts_chat_message=posts_chat_message)
-    # await rq.set_post_status(id_post=data['post_id'],
-    #                          status=rq.StatusPost.publish)
 
 
 @router.callback_query(F.data == 'cancelpost')
@@ -379,7 +351,7 @@ async def publish_post_cancel(callback: CallbackQuery, state: FSMContext, bot: B
     :param bot:
     :return:
     """
-    logging.info(f'publish_post_cancel: {callback.message.chat.id}')
+    logging.info(f'publish_post_cancel: {callback.from_user.id}')
     await callback.answer(text='Публикация поста отменена',
                           show_alert=True)
     await callback.message.edit_text(text='Выберите группу для размещение заявок',
@@ -396,7 +368,7 @@ async def publish_post_autopost(callback: CallbackQuery, state: FSMContext, bot:
     :param bot:
     :return:
     """
-    logging.info(f'publish_post_autopost: {callback.message.chat.id}')
+    logging.info(f'publish_post_autopost: {callback.from_user.id}')
     data = await state.get_data()
     id_post_change = data['post_id']
     info_post: Post = await rq.get_post_id(id_=id_post_change)
@@ -414,7 +386,7 @@ async def publish_post_autopost(callback: CallbackQuery, state: FSMContext, bot:
     :param bot:
     :return:
     """
-    logging.info(f'publish_post_autopost: {callback.message.chat.id}')
+    logging.info(f'publish_post_autopost: {callback.from_user.id}')
     action = callback.data.split('_')[-1]
     await callback.message.edit_text(text='Пришлите время для автопубликации, в формате: чч:мм',
                                      reply_markup=kb.keyboard_delete_autoposting())

@@ -45,6 +45,15 @@ def keyboard_user_publish() -> InlineKeyboardMarkup:
     return keyboard
 
 
+def keyboard_user_publish_new() -> InlineKeyboardMarkup:
+    logging.info("keyboard_user_publish_new")
+    button_1 = InlineKeyboardButton(text='Создать пост',  callback_data=f'publish_post')
+    button_2 = InlineKeyboardButton(text='Опубликованные посты', callback_data=f'post_publish')
+    button_3 = InlineKeyboardButton(text='Изменить автопостинг', callback_data=f'mypostautoposting')
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1]])
+    return keyboard
+
+
 def keyboard_pass_location() -> InlineKeyboardMarkup:
     logging.info("keyboard_pass_location")
     button_1 = InlineKeyboardButton(text='Пропустить',  callback_data=f'pass_location')
@@ -59,7 +68,7 @@ def keyboard_show_post(manager_tg_id: int, location: str) -> InlineKeyboardMarku
     button_3 = InlineKeyboardButton(text='Опубликовать',  callback_data=f'publishpost')
     button_4 = InlineKeyboardButton(text='Отменить', callback_data=f'cancelpost')
     button_5 = InlineKeyboardButton(text='Автопостинг', callback_data=f'autopost')
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_2], [button_3], [button_4], [button_5]])
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_3], [button_4], [button_5]])
     return keyboard
 
 
@@ -69,7 +78,7 @@ def keyboard_show_post_(user_tg_id: int) -> InlineKeyboardMarkup:
     button_3 = InlineKeyboardButton(text='Опубликовать',  callback_data=f'publishpost')
     button_4 = InlineKeyboardButton(text='Отменить', callback_data=f'cancelpost')
     button_5 = InlineKeyboardButton(text='Автопостинг', callback_data=f'autopost')
-    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_1], [button_3], [button_4], [button_5]])
+    keyboard = InlineKeyboardMarkup(inline_keyboard=[[button_3], [button_4], [button_5]])
     return keyboard
 
 

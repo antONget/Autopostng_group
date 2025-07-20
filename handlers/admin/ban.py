@@ -26,7 +26,7 @@ async def func_ban(message: Message, command: CommandObject, bot: Bot):
     mention = reply_message.from_user.mention_html(reply_message.from_user.username)
 
     with suppress(TelegramBadRequest):
-        await bot.ban_chat_member(chat_id=message.chat.id,
+        await bot.ban_chat_member(chat_id=message.from_user.id,
                                   user_id=reply_message.from_user.id,
                                   until_date=date)
         await message.answer(f" Пользователь <b>{mention}</b> был заблокирован!")

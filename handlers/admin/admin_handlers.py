@@ -81,7 +81,7 @@ async def process_forward_partner(callback: CallbackQuery, state: FSMContext, bo
     :param bot:
     :return:
     """
-    logging.info(f'process_forward_partner: {callback.message.chat.id}')
+    logging.info(f'process_forward_partner: {callback.from_user.id}')
     data = await state.get_data()
     change_partner = data['change_partner']
     if change_partner == 'add':
@@ -116,7 +116,7 @@ async def process_back_partner(callback: CallbackQuery, state: FSMContext, bot: 
     :param bot:
     :return:
     """
-    logging.info(f'process_back_partner: {callback.message.chat.id}')
+    logging.info(f'process_back_partner: {callback.from_user.id}')
     data = await state.get_data()
     change_partner = data['change_partner']
     if change_partner == 'add':
@@ -150,7 +150,7 @@ async def process_select_partner(callback: CallbackQuery, state: FSMContext, bot
     :param bot:
     :return:
     """
-    logging.info(f'process_forward_back_partner: {callback.message.chat.id}')
+    logging.info(f'process_forward_back_partner: {callback.from_user.id}')
     await state.set_state(state=None)
     id_user = int(callback.data.split('_')[-1])
     data = await state.get_data()
@@ -177,13 +177,13 @@ async def process_get_partner(message: Message, state: FSMContext, bot: Bot) -> 
     :param bot:
     :return:
     """
-    logging.info(f'process_get_partner: {message.chat.id}')
+    logging.info(f'process_get_partner: {message.from_user.id}')
     if message.text in ['Опубликовать пост', 'Менеджеры', 'Мои группы', 'Партнеры']:
         await message.answer(text='Добавление администратора отменено')
         await state.set_state(state=None)
         return
     try:
-        await bot.delete_message(chat_id=message.chat.id,
+        await bot.delete_message(chat_id=message.from_user.id,
                                  message_id=message.message_id-1)
     except:
         pass

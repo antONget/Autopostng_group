@@ -29,7 +29,7 @@ async def start(message: Message, state: FSMContext, bot: Bot) -> None:
     :return:
     """
     logging.info('start')
-    tg_id = message.chat.id
+    tg_id = message.from_user.id
     await state.set_state(state=None)
     user = await rq.get_user(tg_id=tg_id)
     if not user:

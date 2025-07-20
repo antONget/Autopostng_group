@@ -65,12 +65,11 @@ async def action_in_group(message: Message, state: FSMContext, bot: Bot) -> None
         await asyncio.sleep(5)
         await msg.delete()
     else:
-        info_group: Group = await rq.get_group_peer_id(peer_id=message.chat.id)
+        info_group: Group = await rq.get_group_peer_id(peer_id=message.from_user.id)
         check_group_id: int = info_group.id
         group_list = []
         for active in list_active_subscribe:
             group_list.extend(item for item in active.group_id_list.split(',') if item)
-        print(f'{check_group_id}/{message.chat.id}, {list(map(int, group_list))}')
         if check_group_id in list(map(int, group_list)):
             await message.answer(text='Ты можешь писать в группе')
         else:

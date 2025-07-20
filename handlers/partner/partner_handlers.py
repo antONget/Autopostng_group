@@ -83,6 +83,7 @@ async def select_action_black_list(callback: CallbackQuery, state: FSMContext, b
                                                   ' или пришлите его username (например, @manager)',
                                              reply_markup=await kb.keyboards_black_list(black_list=list_users,
                                                                                         block=0))
+            await state.set_state(Partner.manager)
         else:
             await callback.answer(text='Нет пользователей в БД для добавления в черный список', show_alert=True)
     # Удаление пользователя из ЧС
@@ -91,13 +92,13 @@ async def select_action_black_list(callback: CallbackQuery, state: FSMContext, b
         blacklist_partner: list = await rq.get_blacklist_partner(tg_id=callback.from_user.id)
         if blacklist_partner:
             await callback.message.edit_text(text='Выберите пользователя для удаления его из <b>черного списка</b>'
-                                                  ' (например, @manager)',
+                                                  'или пришлите его username (например, @manager)',
                                              reply_markup=await kb.keyboards_black_list(black_list=blacklist_partner,
                                                                                         block=0))
+            await state.set_state(Partner.manager)
         else:
             await callback.answer(text='Нет пользователей добавленных в черный список', show_alert=True)
     await callback.answer()
-    await state.set_state(Partner.manager)
 
 
 # Вперед
@@ -146,7 +147,7 @@ async def process_black_list_back(callback: CallbackQuery, state: FSMContext, bo
     :param bot:
     :return:
     """
-    logging.info(f'process_black_list_back: {callback.message.chat.id}')
+    logging.info(f'process_black_list_back: {callback.from_usert.id}')
     data = await state.get_data()
     action_black_list = data['action_black_list']
     if action_black_list == 'add':
@@ -180,7 +181,7 @@ async def process_black_list_select(callback: CallbackQuery, state: FSMContext, 
     :param bot:
     :return:
     """
-    logging.info(f'process_black_list_select: {callback.message.chat.id}')
+    logging.info(f'process_black_list_select: {callback.from_user.id}')
     await state.set_state(state=None)
     id_user = int(callback.data.split('_')[-1])
     user: User = await rq.get_user_id(id_user=id_user)
